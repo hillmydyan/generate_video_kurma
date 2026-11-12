@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@/components/ui/Icon';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { useNotify } from '@/components/ui/NotificationProvider';
 import { useEventsCtx } from '@/lib/useEvents';
 import { fmtCredits } from '@/lib/format';
 import { api } from '@/lib/api';
@@ -9,6 +10,7 @@ import { api } from '@/lib/api';
 export const Gallery: React.FC = () => {
   const navigate = useNavigate();
   const { lastTaskUpdate } = useEventsCtx();
+  const { success, error, info, confirm } = useNotify();
 
   const [tasks, setTasks] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
@@ -105,14 +107,16 @@ export const Gallery: React.FC = () => {
   const handleDownloadZip = async () => {
     if (!user.id || selectedIds.length === 0) return;
     try {
+      info('Menyiapkan Arsip ZIP', `Mengemas ${selectedIds.length} aset terpilih...`);
       const blob = await api.tasks.downloadZip(user.id, selectedIds);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `snapgen_assets_${selectedIds.length}.zip`;
       a.click();
+      success('Unduhan ZIP Dimulai', `${selectedIds.length} aset berhasil dikemas.`);
     } catch (err: any) {
-      alert(err.message || 'Gagal mengunduh ZIP');
+      error('Gagal Mengunduh ZIP', err.message || 'Gagal mengunduh ZIP');
     }
   };
 
@@ -125,17 +129,26 @@ export const Gallery: React.FC = () => {
         options: task.options,
       })
     );
+    info('Prompt Disalin ke Studio', 'Parameter dan prompt siap digunakan kembali.');
     navigate('/studio');
   };
 
   const handleDelete = async (taskId: string) => {
-    if (!window.confirm('Hapus aset ini dari galeri?')) return;
+    const ok = await confirm({
+      title: 'Hapus Aset dari Galeri?',
+      message: `Aset #${taskId.slice(-6)} akan dihapus secara permanen dari riwayat galeri Anda.`,
+      confirmLabel: 'Hapus Aset',
+      cancelLabel: 'Batal',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await api.tasks.delete(taskId);
       setTasks((prev) => prev.filter((t) => t.task_id !== taskId));
       setSelectedIds((prev) => prev.filter((id) => id !== taskId));
+      success('Aset Dihapus', `Aset #${taskId.slice(-6)} berhasil dihapus dari galeri.`);
     } catch (err: any) {
-      alert(err.message);
+      error('Gagal Menghapus Aset', err.message);
     }
   };
 

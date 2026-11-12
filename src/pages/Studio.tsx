@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@/components/ui/Icon';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { useNotify } from '@/components/ui/NotificationProvider';
 import { useEventsCtx } from '@/lib/useEvents';
 import { fmtDuration, fmtCredits, truncate, fmtTime } from '@/lib/format';
 import { api } from '@/lib/api';
@@ -9,6 +10,7 @@ import { api } from '@/lib/api';
 export const Studio: React.FC = () => {
   const navigate = useNavigate();
   const { lastTaskUpdate } = useEventsCtx();
+  const { success, error, info, warning } = useNotify();
 
   const [models, setModels] = useState<any[]>([]);
   const [selectedModelKey, setSelectedModelKey] = useState<string>('veo');
@@ -27,8 +29,6 @@ export const Studio: React.FC = () => {
   const [modelPopupOpen, setModelPopupOpen] = useState(false);
   const [ratioDropdownOpen, setRatioDropdownOpen] = useState(false);
   const [durationDropdownOpen, setDurationDropdownOpen] = useState(false);
-  const [successNote, setSuccessNote] = useState<string | null>(null);
-  const [errorNote, setErrorNote] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -53,7 +53,7 @@ export const Studio: React.FC = () => {
         }
       })
       .catch((err) => {
-        setErrorNote(err.message);
+        error('Gagal Memuat Model', err.message);
       });
 
     // Check reuse from sessionStorage
@@ -131,7 +131,6 @@ export const Studio: React.FC = () => {
 
   const handleGenerate = async () => {
     if (!prompt.trim() || !user || !currentModel) return;
-    setErrorNote(null);
     setLoading(true);
 
     try {
@@ -159,12 +158,15 @@ export const Studio: React.FC = () => {
         setActiveTask(newTask);
       }
 
-      setSuccessNote(`Task masuk antrean · estimasi selesai ≈ ${fmtTime(new Date(Date.now() + (res.estimate?.total_sec || 180) * 1000))} WIB`);
-      setTimeout(() => setSuccessNote(null), 9000);
+      const estFinish = fmtTime(new Date(Date.now() + (res.estimate?.total_sec || 120) * 1000));
+      success(
+        'Tugas Masuk Antrean Render',
+        `${currentModel.label} · Estimasi selesai sekitar pukul ${estFinish} WIB`
+      );
       loadTasksAndQuota();
       setTimeout(() => window.dispatchEvent(new Event('snapgen_credits_refresh')), 2500);
     } catch (err: any) {
-      setErrorNote(err.message || 'Gagal memproses pengiriman.');
+      error('Gagal Mengirim Tugas', err.message || 'Gagal memproses pengiriman.');
     } finally {
       setLoading(false);
     }
@@ -183,15 +185,16 @@ export const Studio: React.FC = () => {
     try {
       const res = await api.tasks.upload(file);
       setReferenceImagePath(res.path);
+      info('Gambar Referensi Terpasang', `File ${res.filename || file.name} siap digunakan.`);
     } catch (err: any) {
-      setErrorNote(err.message);
+      error('Gagal Mengunggah Gambar', err.message);
     }
   };
 
   const handleVoiceDictation = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      setErrorNote('Browser belum mendukung dikte suara Web Speech API.');
+      warning('Dikte Suara Tidak Didukung', 'Browser Anda belum mendukung Web Speech API.');
       return;
     }
     try {
@@ -405,20 +408,6 @@ export const Studio: React.FC = () => {
         </button>
       </div>
 
-      {/* Alerts */}
-      {successNote && (
-        <div className="note-info mt-1.5 flex items-center gap-2 text-xs py-1">
-          <Icon name="check_circle" size={14} className="text-[#10b981]" />
-          <span>{successNote}</span>
-        </div>
-      )}
-      {errorNote && (
-        <div className="note-error mt-1.5 flex items-center gap-2 text-xs py-1">
-          <Icon name="error" size={14} />
-          <span>{errorNote}</span>
-        </div>
-      )}
-
       {/* Floating Prompt Dock (ChatGPT & Gemini AI Floating Style) */}
       <div className="relative w-full max-w-[680px] mx-auto mt-2 transition-all duration-300">
         <div className="bg-[#0c1419]/95 backdrop-blur-2xl border border-white/[0.12] rounded-2xl p-2 sm:p-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.8)] focus-within:border-[#9cb080]/60 focus-within:ring-2 focus-within:ring-[#9cb080]/20 transition-all duration-200">
@@ -428,8 +417,12 @@ export const Studio: React.FC = () => {
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setModelPopupOpen(!modelPopupOpen)}
-                className="btn btn-ghost px-2 py-0.5 text-[11px] font-mono font-semibold rounded-full flex items-center gap-1 border-white/10 bg-[#152126]/80 hover:bg-[#202c31]"
+                onClick={() => {
+                  setModelPopupOpen(!modelPopupOpen);
+                  setRatioDropdownOpen(false);
+                  setDurationDropdownOpen(false);
+                }}
+                className="btn btn-ghost px-2.5 py-1 text-[11px] font-mono font-semibold rounded-full flex items-center gap-1.5 border-white/10 bg-[#152126]/90 hover:bg-[#202c31]"
               >
                 <Icon name="bolt" size={12} className="text-[#ffd28a]" />
                 <span>{currentModel?.label || 'Veo 3.1 Fast Full HD'} · {currentModel?.credits ?? 4} KR</span>
@@ -438,11 +431,14 @@ export const Studio: React.FC = () => {
 
               {modelPopupOpen && (
                 <div
-                  className="absolute left-0 bottom-full mb-2 w-64 glass-panel p-2 z-50 shadow-2xl rounded-xl border border-white/15"
+                  className="absolute left-0 bottom-full mb-2 w-72 rounded-2xl bg-[#0c151a]/95 backdrop-blur-2xl p-2.5 z-50 shadow-[0_20px_50px_rgba(0,0,0,0.9)] border border-white/15"
                   onMouseLeave={() => setModelPopupOpen(false)}
                 >
-                  <div className="kicker px-2 py-1 text-[9px]">MODEL DIIZINKAN DIVISI</div>
-                  <div className="space-y-1 mt-1 max-h-52 overflow-y-auto">
+                  <div className="flex items-center justify-between px-2 py-1 border-b border-white/[0.06] mb-1">
+                    <span className="kicker text-[9px]">PILIH ENGINE MODEL</span>
+                    <span className="text-[9px] font-mono text-[#9cb080]">{models.length} Aktif</span>
+                  </div>
+                  <div className="space-y-1 max-h-56 overflow-y-auto pr-0.5">
                     {models.map((m) => (
                       <button
                         key={m.key}
@@ -451,18 +447,23 @@ export const Studio: React.FC = () => {
                           if (m.options?.aspect?.length) setSelectedAspect(m.options.aspect[0]);
                           if (m.options?.duration?.length) setSelectedDuration(m.options.duration[0]);
                           setModelPopupOpen(false);
+                          info('Model Diubah', `Menggunakan ${m.label} (${m.credits} KR)`);
                         }}
-                        className={`w-full text-left px-2.5 py-1.5 rounded-lg flex items-center justify-between text-[11px] transition ${
+                        className={`w-full text-left px-2.5 py-2 rounded-xl flex items-center justify-between text-[11px] transition ${
                           selectedModelKey === m.key
-                            ? 'bg-[#2b373c] text-white border border-[#9cb080]/40'
-                            : 'hover:bg-white/5 text-[#d8e5eb]'
+                            ? 'bg-[#202c31] text-white border border-[#9cb080]/40'
+                            : 'hover:bg-white/5 text-[#d8e5eb] border border-transparent'
                         }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <Icon name={m.type === 'video' ? 'movie' : 'image'} size={14} />
-                          <span className="font-semibold">{m.label}</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Icon
+                            name={m.type === 'video' ? 'movie' : 'image'}
+                            size={14}
+                            className={selectedModelKey === m.key ? 'text-[#9cb080]' : 'text-zinc-400'}
+                          />
+                          <span className="font-semibold truncate">{m.label}</span>
                         </div>
-                        <span className="font-mono text-[#ffd28a]">
+                        <span className="font-mono text-[10px] text-[#ffd28a] shrink-0 ml-2">
                           {m.credits} KR · ≈ {fmtDuration(m.est_seconds)}
                         </span>
                       </button>
@@ -476,8 +477,12 @@ export const Studio: React.FC = () => {
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setRatioDropdownOpen(!ratioDropdownOpen)}
-                className="btn btn-ghost px-2 py-0.5 text-[11px] font-mono rounded-full flex items-center gap-1 border-white/10 bg-[#152126]/80 hover:bg-[#202c31]"
+                onClick={() => {
+                  setRatioDropdownOpen(!ratioDropdownOpen);
+                  setModelPopupOpen(false);
+                  setDurationDropdownOpen(false);
+                }}
+                className="btn btn-ghost px-2.5 py-1 text-[11px] font-mono rounded-full flex items-center gap-1 border-white/10 bg-[#152126]/90 hover:bg-[#202c31]"
               >
                 <Icon name="aspect_ratio" size={12} />
                 <span>{selectedAspect}</span>
@@ -485,9 +490,10 @@ export const Studio: React.FC = () => {
               </button>
               {ratioDropdownOpen && (
                 <div
-                  className="absolute left-0 bottom-full mb-2 w-28 glass-panel p-1.5 z-50 rounded-xl border border-white/15"
+                  className="absolute left-0 bottom-full mb-2 w-36 rounded-2xl bg-[#0c151a]/95 backdrop-blur-2xl p-2 z-50 shadow-[0_20px_50px_rgba(0,0,0,0.9)] border border-white/15"
                   onMouseLeave={() => setRatioDropdownOpen(false)}
                 >
+                  <div className="kicker px-2 py-0.5 text-[9px] border-b border-white/[0.06] mb-1">RASIO</div>
                   {(currentModel?.options?.aspect || ['9:16', '16:9', '1:1']).map((asp: string) => (
                     <button
                       key={asp}
@@ -495,11 +501,14 @@ export const Studio: React.FC = () => {
                         setSelectedAspect(asp);
                         setRatioDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-2 py-1 rounded text-xs font-mono ${
-                        selectedAspect === asp ? 'bg-white/15 text-white' : 'hover:bg-white/5'
+                      className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-mono flex items-center justify-between transition ${
+                        selectedAspect === asp
+                          ? 'bg-[#202c31] text-white border border-[#9cb080]/40'
+                          : 'hover:bg-white/5 text-[#d8e5eb]'
                       }`}
                     >
-                      {asp}
+                      <span>{asp}</span>
+                      {selectedAspect === asp && <Icon name="check_circle" size={12} className="text-[#9cb080]" />}
                     </button>
                   ))}
                 </div>
@@ -511,8 +520,12 @@ export const Studio: React.FC = () => {
               <div className="relative">
                 <button
                   type="button"
-                  onClick={() => setDurationDropdownOpen(!durationDropdownOpen)}
-                  className="btn btn-ghost px-2 py-0.5 text-[11px] font-mono rounded-full flex items-center gap-1 border-white/10 bg-[#152126]/80 hover:bg-[#202c31]"
+                  onClick={() => {
+                    setDurationDropdownOpen(!durationDropdownOpen);
+                    setModelPopupOpen(false);
+                    setRatioDropdownOpen(false);
+                  }}
+                  className="btn btn-ghost px-2.5 py-1 text-[11px] font-mono rounded-full flex items-center gap-1 border-white/10 bg-[#152126]/90 hover:bg-[#202c31]"
                 >
                   <Icon name="schedule" size={12} />
                   <span>{selectedDuration}s</span>
@@ -520,9 +533,10 @@ export const Studio: React.FC = () => {
                 </button>
                 {durationDropdownOpen && (
                   <div
-                    className="absolute left-0 bottom-full mb-2 w-28 glass-panel p-1.5 z-50 rounded-xl border border-white/15"
+                    className="absolute left-0 bottom-full mb-2 w-36 rounded-2xl bg-[#0c151a]/95 backdrop-blur-2xl p-2 z-50 shadow-[0_20px_50px_rgba(0,0,0,0.9)] border border-white/15"
                     onMouseLeave={() => setDurationDropdownOpen(false)}
                   >
+                    <div className="kicker px-2 py-0.5 text-[9px] border-b border-white/[0.06] mb-1">DURASI</div>
                     {(currentModel?.options?.duration || [4, 6, 8]).map((dur: number) => (
                       <button
                         key={dur}
@@ -530,11 +544,14 @@ export const Studio: React.FC = () => {
                           setSelectedDuration(dur);
                           setDurationDropdownOpen(false);
                         }}
-                        className={`w-full text-left px-2 py-1 rounded text-xs font-mono ${
-                          selectedDuration === dur ? 'bg-white/15 text-white' : 'hover:bg-white/5'
+                        className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-mono flex items-center justify-between transition ${
+                          selectedDuration === dur
+                            ? 'bg-[#202c31] text-white border border-[#9cb080]/40'
+                            : 'hover:bg-white/5 text-[#d8e5eb]'
                         }`}
                       >
-                        {dur} Detik
+                        <span>{dur} Detik</span>
+                        {selectedDuration === dur && <Icon name="check_circle" size={12} className="text-[#9cb080]" />}
                       </button>
                     ))}
                   </div>

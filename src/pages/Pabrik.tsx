@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/Icon';
+import { useNotify } from '@/components/ui/NotificationProvider';
 import { fmtDuration, fmtCredits, truncate } from '@/lib/format';
 import { api } from '@/lib/api';
 
 export const Pabrik: React.FC = () => {
+  const { success, error, warning } = useNotify();
   const [batchName, setBatchName] = useState('Kampanye Launching Q4');
   const [mode, setMode] = useState<'multi_prompt' | 'multi_asset' | 'csv'>('multi_prompt');
   const [formula, setFormula] = useState('Close-up shot of {product} on marble podium, {lighting} cinematic illumination');
@@ -21,8 +23,6 @@ export const Pabrik: React.FC = () => {
   const [batchTaskIds, setBatchTaskIds] = useState<string[]>([]);
   const [batchId, setBatchId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [errorNote, setErrorNote] = useState<string | null>(null);
-  const [successNote, setSuccessNote] = useState<string | null>(null);
   const [previewTask, setPreviewTask] = useState<any | null>(null);
 
   useEffect(() => {
@@ -73,8 +73,6 @@ export const Pabrik: React.FC = () => {
 
   const handleStartBatch = async () => {
     if (!user) return;
-    setErrorNote(null);
-    setSuccessNote(null);
 
     // Build expanded prompt entries
     const entries: { prompt: string; count: number }[] = [];
@@ -94,7 +92,7 @@ export const Pabrik: React.FC = () => {
     }
 
     if (entries.length === 0) {
-      setErrorNote('Formula prompt minimal harus memiliki 5 karakter.');
+      warning('Formula Tidak Valid', 'Formula prompt minimal harus memiliki 5 karakter.');
       return;
     }
 
@@ -116,12 +114,17 @@ export const Pabrik: React.FC = () => {
 
       const res = await api.tasks.generate(user.id, payload);
       const created = res.tasks || [];
-      setBatchId(`B-${Math.floor(100 + Math.random() * 900)}`);
+      const newBatchId = `B-${Math.floor(100 + Math.random() * 900)}`;
+      setBatchId(newBatchId);
       setBatchTaskIds(created.map((t: any) => t.task_id));
-      setSuccessNote(`${created.length} sub-tugas berhasil dikirim ke antrean worker.`);
+      success(
+        `Batch #${newBatchId} Dimulai`,
+        `${created.length} sub-tugas berhasil dikirim ke antrean worker divisi.`
+      );
       await loadTasks();
+      setTimeout(() => window.dispatchEvent(new Event('snapgen_credits_refresh')), 2500);
     } catch (err: any) {
-      setErrorNote(err.message || 'Gagal memulai batch pabrik.');
+      error('Gagal Memulai Batch', err.message || 'Gagal memulai batch pabrik.');
     } finally {
       setSubmitting(false);
     }
@@ -166,19 +169,6 @@ export const Pabrik: React.FC = () => {
           </span>
         </div>
       </div>
-
-      {errorNote && (
-        <div className="note-error flex items-center gap-2 text-xs py-2">
-          <Icon name="error" size={16} />
-          <span>{errorNote}</span>
-        </div>
-      )}
-      {successNote && (
-        <div className="note-info flex items-center gap-2 text-xs py-2">
-          <Icon name="check_circle" size={16} className="text-[#10b981]" />
-          <span>{successNote}</span>
-        </div>
-      )}
 
       {/* Two Columns Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Icon } from '@/components/ui/Icon';
+import { useNotify } from '@/components/ui/NotificationProvider';
 import { fmtCredits, fmtDuration } from '@/lib/format';
 import { api } from '@/lib/api';
 
 type AdminTab = 'overview' | 'divisions' | 'health' | 'audit' | 'accounts' | 'users';
 
 export const Admin: React.FC = () => {
+  const { success, error, info, confirm, prompt } = useNotify();
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [overview, setOverview] = useState<any>(null);
   const [divisions, setDivisions] = useState<any[]>([]);
@@ -66,9 +68,9 @@ export const Admin: React.FC = () => {
         default_video_model: selectedDiv.default_video_model,
         default_image_model: selectedDiv.default_image_model,
       });
-      alert('Model divisi berhasil diperbarui!');
+      success('Alokasi Model Diperbarui', `Pembatasan model untuk divisi ${selectedDiv.name} berhasil disimpan.`);
     } catch (err: any) {
-      alert(err.message);
+      error('Gagal Menyimpan Divisi', err.message);
     }
   };
 
@@ -86,51 +88,65 @@ export const Admin: React.FC = () => {
       setNewAccLabel('');
       setNewAccKey('');
       fetchAdminData();
-      alert('Akun snapgen berhasil ditambahkan!');
+      success('Akun Provider Ditambahkan', `Akun ${newAccLabel} berhasil didaftarkan ke divisi ${newAccDiv}.`);
     } catch (err: any) {
-      alert(err.message);
+      error('Gagal Menambahkan Akun', err.message);
     }
   };
 
   const handleTestKey = async (accId: string) => {
     try {
       const res = await api.admin.testAccountKey(accId);
-      alert(res.message);
+      success('Uji Koneksi API Berhasil', res.message || `Koneksi akun ${accId} aktif.`);
       fetchAdminData();
     } catch (err: any) {
-      alert(err.message);
+      error('Uji Koneksi API Gagal', err.message);
     }
   };
 
   const handleChangeKey = async (accId: string) => {
-    const newKey = window.prompt('Masukkan SnapGen API Key baru:');
+    const newKey = await prompt({
+      title: `Ganti SnapGen API Key (${accId})`,
+      message: 'Masukkan API Key baru dari dashboard SnapGen untuk akun provider ini.',
+      placeholder: 'sk-snapgen-...',
+      confirmLabel: 'Simpan API Key',
+      cancelLabel: 'Batal',
+    });
     if (!newKey || !newKey.trim()) return;
     try {
       await api.admin.updateAccount(accId, { api_key: newKey.trim() });
-      alert('API Key berhasil diperbarui!');
+      success('API Key Diperbarui', `API Key untuk akun ${accId} berhasil diganti dan dienkripsi.`);
       fetchAdminData();
     } catch (err: any) {
-      alert(err.message);
+      error('Gagal Mengganti API Key', err.message);
     }
   };
 
   const handleMakePrimary = async (accId: string) => {
     try {
       await api.admin.makeAccountPrimary(accId);
-      alert('Akun berhasil dijadikan Primer!');
+      success('Slot Primer Diperbarui', `Akun ${accId} kini menjadi akun utama (Primary).`);
       fetchAdminData();
     } catch (err: any) {
-      alert(err.message);
+      error('Gagal Mengubah Slot', err.message);
     }
   };
 
   const handleDeleteAccount = async (accId: string) => {
-    if (!window.confirm('Yakin ingin menghapus akun ini?')) return;
+    const ok = await confirm({
+      title: 'Hapus Akun Provider?',
+      message: `Akun provider "${accId}" akan dihapus dari sistem. Pastikan ada akun cadangan untuk divisi terkait.`,
+      confirmLabel: 'Hapus Akun',
+      cancelLabel: 'Batal',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await api.admin.deleteAccount(accId);
       fetchAdminData();
+      success('Akun Provider Dihapus', `Akun ${accId} telah dihapus dari sistem.`);
     } catch (err: any) {
-      alert(err.message);
+      error('Gagal Menghapus Akun', err.message);
     }
   };
 
@@ -144,13 +160,14 @@ export const Admin: React.FC = () => {
         role: newRole,
         division_id: newUserDiv,
       });
+      const addedUser = newUsername;
       setNewUsername('');
       setNewName('');
       setNewPassword('');
       fetchAdminData();
-      alert('User baru berhasil didaftarkan!');
+      success('User Baru Terdaftar', `Akun @${addedUser} berhasil ditambahkan ke divisi ${newUserDiv}.`);
     } catch (err: any) {
-      alert(err.message);
+      error('Gagal Mendaftarkan User', err.message);
     }
   };
 
@@ -158,8 +175,9 @@ export const Admin: React.FC = () => {
     try {
       const res = await api.admin.rotateResetCode();
       setResetCode(res.code);
+      info('Kode Reset Diputar', `Kode reset harian baru: ${res.code}`);
     } catch (err: any) {
-      alert(err.message);
+      error('Gagal Memutar Kode Reset', err.message);
     }
   };
 

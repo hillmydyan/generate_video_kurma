@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@/components/ui/Icon';
+import { useNotify } from '@/components/ui/NotificationProvider';
 import { api } from '@/lib/api';
 
 type LoginMode = 'login' | 'reset' | 'bootstrap';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { success, error: notifyError } = useNotify();
   const [mode, setMode] = useState<LoginMode>('login');
   const [username, setUsername] = useState('');
   const [name, setName] = useState('');
@@ -38,12 +40,14 @@ export const Login: React.FC = () => {
         localStorage.setItem('snapgen_token', res.token);
         localStorage.setItem('snapgen_media_token', res.media_token);
         localStorage.setItem('snapgen_user', JSON.stringify(res.user));
+        success('Akun Admin Dibuat', `Selamat datang, ${res.user.name}!`);
         navigate('/studio');
       } else if (mode === 'login') {
         const res = await api.auth.login({ username, password });
         localStorage.setItem('snapgen_token', res.token);
         localStorage.setItem('snapgen_media_token', res.media_token);
         localStorage.setItem('snapgen_user', JSON.stringify(res.user));
+        success('Berhasil Masuk', `Selamat datang kembali, ${res.user.name}!`);
         navigate('/studio');
       } else if (mode === 'reset') {
         const res = await api.auth.resetPassword({
@@ -53,10 +57,13 @@ export const Login: React.FC = () => {
         });
         localStorage.setItem('snapgen_token', res.token);
         localStorage.setItem('snapgen_media_token', res.media_token);
+        success('Password Disetel Ulang', 'Password baru Anda telah aktif.');
         navigate('/studio');
       }
     } catch (err: any) {
-      setError(err.message || 'Terjadi kesalahan sistem.');
+      const msg = err.message || 'Terjadi kesalahan sistem.';
+      setError(msg);
+      notifyError('Autentikasi Gagal', msg);
     } finally {
       setLoading(false);
     }

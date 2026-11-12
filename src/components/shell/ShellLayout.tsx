@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Icon } from '@/components/ui/Icon';
+import { useNotify } from '@/components/ui/NotificationProvider';
 import { useEventsCtx } from '@/lib/useEvents';
 import { fmtCredits, initials } from '@/lib/format';
 import { api } from '@/lib/api';
@@ -9,10 +10,13 @@ export const ShellLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { connState, lastTaskUpdate } = useEventsCtx();
+  const { success, error, info, history, clearHistory } = useNotify();
   const [user, setUser] = useState<any>(null);
   const [divisionCredits, setDivisionCredits] = useState<number | null>(null);
   const [refreshingCredits, setRefreshingCredits] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifiedTasksRef = useRef<Record<string, string>>({});
 
   useEffect(() => {
     const rawUser = localStorage.getItem('snapgen_user');
@@ -27,7 +31,7 @@ export const ShellLayout: React.FC = () => {
     }
   }, [navigate]);
 
-  const fetchCredits = async (refresh: number = 0) => {
+  const fetchCredits = async (refresh: number = 0, manual: boolean = false) => {
     if (!user) return;
     if (refresh === 1) setRefreshingCredits(true);
     try {
@@ -37,6 +41,9 @@ export const ShellLayout: React.FC = () => {
         const divAccs = res.accounts.filter((a: any) => a.division_id === userDiv);
         const total = divAccs.reduce((sum: number, a: any) => sum + (a.credits || 0), 0);
         setDivisionCredits(total);
+        if (manual) {
+          info('Saldo Kredit Disinkronkan', `Saldo aktif divisi ${userDiv.toUpperCase()}: ${fmtCredits(total)}`);
+        }
       }
     } catch {
       // Silently ignore
@@ -53,10 +60,26 @@ export const ShellLayout: React.FC = () => {
     }
   }, [user]);
 
-  // Refresh credits whenever a task starts or finishes
+  // Refresh credits & trigger pop-up notification whenever a task finishes or fails
   useEffect(() => {
     if (user && lastTaskUpdate) {
       fetchCredits(1);
+      const tid = lastTaskUpdate.task_id;
+      const st = lastTaskUpdate.status;
+      if (tid && st && notifiedTasksRef.current[tid] !== st) {
+        notifiedTasksRef.current[tid] = st;
+        if (st === 'completed') {
+          success(
+            `Generasi Selesai (#${tid.slice(-6)})`,
+            'Video berhasil dirender dan siap ditonton atau diunduh.'
+          );
+        } else if (st === 'failed') {
+          error(
+            `Generasi Gagal (#${tid.slice(-6)})`,
+            lastTaskUpdate.error || 'Terjadi kendala saat memproses permintaan di provider.'
+          );
+        }
+      }
     }
   }, [lastTaskUpdate]);
 
@@ -161,7 +184,7 @@ export const ShellLayout: React.FC = () => {
           {/* Division Credit Chip */}
           <button
             type="button"
-            onClick={() => fetchCredits(1)}
+            onClick={() => fetchCredits(1, true)}
             title="Klik untuk sinkronisasi saldo kredit terbaru dari SnapGen"
             className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#111d22] hover:bg-[#1a2a31] border border-[#f59e0b]/30 text-xs font-mono font-semibold text-[#ffd28a] transition cursor-pointer"
           >
@@ -173,10 +196,106 @@ export const ShellLayout: React.FC = () => {
             <span>{divisionCredits != null ? fmtCredits(divisionCredits) : '… KR'}</span>
           </button>
 
+          {/* Notification Center Pop-up */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setNotifOpen(!notifOpen);
+                setMenuOpen(false);
+              }}
+              title="Pusat Notifikasi"
+              className="relative w-8 h-8 rounded-full bg-[#152126] border border-white/10 flex items-center justify-center text-zinc-300 hover:text-white hover:border-[#9cb080]/50 transition"
+            >
+              <Icon name="notifications" size={16} />
+              {history.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-1 rounded-full bg-[#4f46e5] text-[9px] font-mono font-bold text-white flex items-center justify-center">
+                  {history.length > 9 ? '9+' : history.length}
+                </span>
+              )}
+            </button>
+
+            {notifOpen && (
+              <div
+                className="absolute right-0 mt-2 w-80 rounded-2xl bg-[#0c151a]/95 backdrop-blur-2xl border border-white/15 z-50 shadow-[0_20px_50px_rgba(0,0,0,0.85)] overflow-hidden"
+                onMouseLeave={() => setNotifOpen(false)}
+              >
+                <div className="px-4 py-3 border-b border-white/[0.08] flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Icon name="notifications" size={14} className="text-[#9cb080]" />
+                    <span className="text-xs font-bold text-white">Notifikasi Sistem</span>
+                  </div>
+                  {history.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearHistory}
+                      className="text-[10px] font-mono text-[#8f9286] hover:text-white transition"
+                    >
+                      Bersihkan
+                    </button>
+                  )}
+                </div>
+
+                <div className="max-h-72 overflow-y-auto divide-y divide-white/[0.06]">
+                  {history.length === 0 ? (
+                    <div className="py-8 px-4 text-center text-xs text-[#8f9286]">
+                      Belum ada notifikasi aktivitas.
+                    </div>
+                  ) : (
+                    history.map((item) => (
+                      <div key={item.id} className="p-3 hover:bg-white/[0.03] transition flex items-start gap-2.5">
+                        <div
+                          className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+                            item.type === 'success'
+                              ? 'bg-[#10b981]/15 text-[#10b981]'
+                              : item.type === 'error'
+                              ? 'bg-[#fb7185]/15 text-[#fb7185]'
+                              : item.type === 'warning'
+                              ? 'bg-[#f59e0b]/15 text-[#ffd28a]'
+                              : 'bg-[#4f46e5]/20 text-[#9ea0fd]'
+                          }`}
+                        >
+                          <Icon
+                            name={
+                              item.type === 'success'
+                                ? 'check_circle'
+                                : item.type === 'error'
+                                ? 'error'
+                                : item.type === 'warning'
+                                ? 'warning'
+                                : 'bolt'
+                            }
+                            size={13}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-xs font-semibold text-white truncate">{item.title}</p>
+                            <span className="text-[9px] font-mono text-[#8f9286] shrink-0">
+                              {item.createdAt}
+                            </span>
+                          </div>
+                          {item.message && (
+                            <p className="text-[11px] text-[#9fb0b8] mt-0.5 leading-snug break-words">
+                              {item.message}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* User Avatar Menu */}
           <div className="relative">
             <button
-              onClick={() => setMenuOpen(!menuOpen)}
+              onClick={() => {
+                setMenuOpen(!menuOpen);
+                setNotifOpen(false);
+              }}
               className="w-8 h-8 rounded-full bg-[#202c31] border border-white/10 flex items-center justify-center font-bold text-xs text-[#d8e5eb] hover:border-[#9cb080] transition"
             >
               {initials(user.name)}
@@ -184,7 +303,7 @@ export const ShellLayout: React.FC = () => {
 
             {menuOpen && (
               <div
-                className="absolute right-0 mt-2 w-56 glass-panel py-2 z-50 shadow-2xl"
+                className="absolute right-0 mt-2 w-56 rounded-2xl bg-[#0c151a]/95 backdrop-blur-2xl border border-white/15 py-2 z-50 shadow-[0_20px_50px_rgba(0,0,0,0.85)]"
                 onMouseLeave={() => setMenuOpen(false)}
               >
                 <div className="px-4 py-2 border-b border-white/[0.08]">

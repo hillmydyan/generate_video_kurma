@@ -9,61 +9,55 @@ logger = logging.getLogger("snapgen.sse")
 
 class SSEBroker:
     def __init__(self):
-        # Maps user_id -> set of asyncio.Queue
+        # Persistent per-user mailbox queues so events are never lost between polls
+        self._user_mailboxes: Dict[str, asyncio.Queue] = {}
+        # Maps user_id -> set of active asyncio.Queue
         self._user_queues: Dict[str, Set[asyncio.Queue]] = {}
         # Admin broadcast queues (SUPER_ADMIN and DIVISION_ADMIN)
         self._admin_queues: Set[asyncio.Queue] = set()
         self._lock = asyncio.Lock()
 
-    async def connect(self, user_id: str, is_admin: bool = False) -> asyncio.Queue:
-        queue: asyncio.Queue = asyncio.Queue(maxsize=100)
+    async def get_mailbox(self, user_id: str) -> asyncio.Queue:
         async with self._lock:
-            if user_id not in self._user_queues:
-                self._user_queues[user_id] = set()
-            self._user_queues[user_id].add(queue)
-            if is_admin:
-                self._admin_queues.add(queue)
-        logger.debug(f"SSE client connected: user={user_id}, admin={is_admin}")
-        return queue
+            if user_id not in self._user_mailboxes:
+                self._user_mailboxes[user_id] = asyncio.Queue(maxsize=100)
+            return self._user_mailboxes[user_id]
+
+    async def connect(self, user_id: str, is_admin: bool = False) -> asyncio.Queue:
+        return await self.get_mailbox(user_id)
 
     async def disconnect(self, user_id: str, queue: asyncio.Queue, is_admin: bool = False):
-        async with self._lock:
-            if user_id in self._user_queues:
-                self._user_queues[user_id].discard(queue)
-                if not self._user_queues[user_id]:
-                    del self._user_queues[user_id]
-            if is_admin:
-                self._admin_queues.discard(queue)
-        logger.debug(f"SSE client disconnected: user={user_id}")
+        pass
 
     async def broadcast_user(self, user_id: str, event_type: str, data: Any):
-        """Send event to all active connections of a specific user."""
+        """Send event to a specific user's mailbox."""
         payload = f"event: {event_type}\ndata: {json.dumps(data)}\n\n"
-        async with self._lock:
-            queues = list(self._user_queues.get(user_id, []))
-        for q in queues:
+        q = await self.get_mailbox(user_id)
+        if q.full():
             try:
-                q.put_nowait(payload)
-            except asyncio.QueueFull:
+                q.get_nowait()
+            except asyncio.QueueEmpty:
                 pass
+        try:
+            q.put_nowait(payload)
+        except asyncio.QueueFull:
+            pass
 
     async def broadcast_admin(self, event_type: str, data: Any):
-        """Send event to all admin connections."""
-        payload = f"event: {event_type}\ndata: {json.dumps(data)}\n\n"
-        async with self._lock:
-            queues = list(self._admin_queues)
-        for q in queues:
-            try:
-                q.put_nowait(payload)
-            except asyncio.QueueFull:
-                pass
+        """Send event to all user mailboxes."""
+        await self.broadcast_all(event_type, data)
 
     async def broadcast_all(self, event_type: str, data: Any):
-        """Broadcast event to every connected user."""
+        """Broadcast event to every user mailbox."""
         payload = f"event: {event_type}\ndata: {json.dumps(data)}\n\n"
         async with self._lock:
-            all_queues = [q for set_q in self._user_queues.values() for q in set_q]
-        for q in all_queues:
+            queues = list(self._user_mailboxes.values())
+        for q in queues:
+            if q.full():
+                try:
+                    q.get_nowait()
+                except asyncio.QueueEmpty:
+                    pass
             try:
                 q.put_nowait(payload)
             except asyncio.QueueFull:

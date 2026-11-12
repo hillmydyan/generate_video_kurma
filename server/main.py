@@ -12,6 +12,7 @@ from server.db_writer import db_writer
 from server.state import app_state
 from server.auth import verify_token
 from server.sse import sse_broker
+from server.worker import stop_all_workers
 from server.routers import (
     auth_router, models_router, tasks_router, admin_router
 )
@@ -33,6 +34,7 @@ async def lifespan(app: FastAPI):
     app_state.load_catalog()
     yield
     logger.info("Shutting down SnapGen Studio Backend Engine...")
+    await stop_all_workers()
     await db_writer.stop()
 
 app = FastAPI(
@@ -82,22 +84,13 @@ async def sse_events(request: Request, token: str = Query(...)):
     queue = await sse_broker.connect(user_id)
 
     async def event_generator():
-        try:
-            # Send initial ping & retry interval so EventSource seamlessly reconnects
-            yield "retry: 1500\nevent: ping\ndata: {\"status\": \"connected\"}\n\n"
-            for _ in range(10):
-                if await request.is_disconnected():
-                    break
-                try:
-                    payload = await asyncio.wait_for(queue.get(), timeout=1.5)
-                    yield payload
-                except asyncio.TimeoutError:
-                    continue
-            yield "event: ping\ndata: {}\n\n"
-        except asyncio.CancelledError:
-            pass
-        finally:
-            await sse_broker.disconnect(user_id, queue)
+        yield "retry: 2500\nevent: ping\ndata: {\"status\": \"connected\"}\n\n"
+        while not queue.empty():
+            try:
+                payload = queue.get_nowait()
+                yield payload
+            except asyncio.QueueEmpty:
+                break
 
     return StreamingResponse(
         event_generator(),

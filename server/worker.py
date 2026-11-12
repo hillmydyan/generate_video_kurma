@@ -385,3 +385,8 @@ def get_or_create_worker(division_id: str) -> DivisionWorker:
         division_workers[division_id] = worker
     return division_workers[division_id]
 
+async def stop_all_workers():
+    for w in list(division_workers.values()):
+        await w.stop()
+    division_workers.clear()
+

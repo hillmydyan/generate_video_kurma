@@ -15,7 +15,10 @@ export async function request<T>(
   };
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  const timeoutId = setTimeout(
+    () => controller.abort(new Error("Waktu koneksi ke server habis (timeout).")),
+    15000
+  );
 
   let res: Response;
   try {
@@ -24,6 +27,11 @@ export async function request<T>(
       headers,
       signal: controller.signal,
     });
+  } catch (err: any) {
+    if (err?.name === "AbortError" || String(err?.message || "").includes("aborted")) {
+      throw new Error("Koneksi ke server backend timeout. Silakan coba lagi.");
+    }
+    throw err;
   } finally {
     clearTimeout(timeoutId);
   }

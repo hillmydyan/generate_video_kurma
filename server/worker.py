@@ -7,6 +7,7 @@ from typing import Dict, Any, Optional
 from sqlalchemy import select, update
 from server.config import get_setting, DATA_DIR
 from server.db import AsyncSessionLocal, ProviderAccount, Task, PromptBehavior
+from server.db_writer import db_writer
 from server.crypto import decrypt_api_key
 from server.client import SnapgenClient, SnapgenAPIError
 from server.state import app_state
@@ -301,21 +302,24 @@ class DivisionWorker:
             )
 
             # Record behavior for learning/estimation
-            if AsyncSessionLocal:
-                async def _record_behavior(session):
-                    pb = PromptBehavior(
-                        user_id=user_id,
-                        division_id=self.division_id,
-                        model_key=model_key,
-                        prompt_len=len(t["prompt"]),
-                        has_image=bool(t.get("image_path")),
-                        result="completed",
-                        gen_sec=gen_sec,
-                        account_id=account_id,
-                        created_at=now()
-                    )
-                    session.add(pb)
-                db_writer.enqueue(_record_behavior)
+            try:
+                if AsyncSessionLocal:
+                    async def _record_behavior(session):
+                        pb = PromptBehavior(
+                            user_id=user_id,
+                            division_id=self.division_id,
+                            model_key=model_key,
+                            prompt_len=len(t["prompt"]),
+                            has_image=bool(t.get("image_path")),
+                            result="completed",
+                            gen_sec=gen_sec,
+                            account_id=account_id,
+                            created_at=now()
+                        )
+                        session.add(pb)
+                    db_writer.enqueue(_record_behavior)
+            except Exception as ex:
+                logger.warning(f"Failed to enqueue behavior log for {task_id}: {ex}")
 
         except SnapgenAPIError as e:
             logger.error(f"Task {task_id} API error: {e}")

@@ -88,13 +88,24 @@ class AppState:
 
         # Enqueue async DB write regardless of whether task was cached in memory
         async def _write(session):
+            db_values = {}
+            for k, v in kwargs.items():
+                if hasattr(Task, k):
+                    if k in ("started_at", "finished_at", "created_at", "updated_at", "requeued_at", "provider_expired_at") and isinstance(v, str):
+                        try:
+                            from datetime import datetime
+                            v = datetime.fromisoformat(v)
+                        except Exception:
+                            v = now()
+                    db_values[k] = v
+
             stmt = (
                 update(Task)
                 .where(Task.task_id == task_id)
                 .values(
                     status=new_status,
                     updated_at=now(),
-                    **{k: v for k, v in kwargs.items() if hasattr(Task, k)}
+                    **db_values
                 )
             )
             await session.execute(stmt)

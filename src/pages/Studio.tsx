@@ -192,11 +192,11 @@ export const Studio: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-between max-w-5xl mx-auto w-full pb-6">
+    <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full pb-3">
       {/* Kicker Header */}
-      <div className="flex items-center justify-between py-2 border-b border-white/[0.06] mb-4 text-xs font-mono">
+      <div className="flex items-center justify-between py-1 border-b border-white/[0.06] mb-2 text-xs font-mono">
         <span className="text-[#9cb080] font-semibold flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[#9cb080] animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#9cb080] animate-pulse" />
           CANVAS LIVE PREVIEW · {user?.division_id?.toUpperCase() || 'KANTOR A'}
         </span>
         <span className="text-[#8f9286]">
@@ -204,45 +204,45 @@ export const Studio: React.FC = () => {
         </span>
       </div>
 
-      {/* Canvas Card */}
-      <div className="glass-panel relative rounded-2xl overflow-hidden border border-white/10 bg-[#041014] flex flex-col aspect-video max-h-[480px] w-full mx-auto shadow-2xl">
+      {/* Canvas Card (Compact Responsive Height) */}
+      <div className="glass-panel relative rounded-2xl overflow-hidden border border-white/10 bg-[#041014] flex flex-col h-[200px] sm:h-[230px] md:h-[255px] w-full shadow-2xl">
         {/* Top Floating Controls */}
-        <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20 pointer-events-none">
-          <div className="flex items-center gap-2 pointer-events-auto">
+        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-20 pointer-events-none">
+          <div className="flex items-center gap-1.5 pointer-events-auto">
             {activeTask && <StatusBadge status={activeTask.status} />}
-            <span className="px-2.5 py-1 rounded-full bg-[#152126]/80 backdrop-blur-md border border-white/10 text-xs font-mono font-medium text-white">
+            <span className="px-2 py-0.5 rounded-full bg-[#152126]/80 backdrop-blur-md border border-white/10 text-[11px] font-mono font-medium text-white">
               {currentModel?.label || 'Veo'}
             </span>
-            <span className="px-2.5 py-1 rounded-full bg-[#152126]/80 backdrop-blur-md border border-white/10 text-xs font-mono text-[#8f9286]">
+            <span className="px-2 py-0.5 rounded-full bg-[#152126]/80 backdrop-blur-md border border-white/10 text-[11px] font-mono text-[#8f9286]">
               {selectedAspect} · {selectedDuration ? `${selectedDuration}s` : 'IMG'} · 720p
             </span>
           </div>
 
-          <div className="flex items-center gap-2 pointer-events-auto">
+          <div className="flex items-center gap-1.5 pointer-events-auto">
             <button
               onClick={() => {
                 if (activeTask) setPrompt(activeTask.prompt);
               }}
               title="Ulangi Prompt"
-              className="w-8 h-8 rounded-full bg-[#152126]/80 backdrop-blur-md border border-white/10 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-white/10 transition"
+              className="w-7 h-7 rounded-full bg-[#152126]/80 backdrop-blur-md border border-white/10 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-white/10 transition"
             >
-              <Icon name="replay" size={16} />
+              <Icon name="replay" size={14} />
             </button>
             {activeTask?.result_url && (
               <a
                 href={activeTask.result_url}
                 download
                 title="Unduh Hasil"
-                className="w-8 h-8 rounded-full bg-[#152126]/80 backdrop-blur-md border border-white/10 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-white/10 transition"
+                className="w-7 h-7 rounded-full bg-[#152126]/80 backdrop-blur-md border border-white/10 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-white/10 transition"
               >
-                <Icon name="download" size={16} />
+                <Icon name="download" size={14} />
               </a>
             )}
           </div>
         </div>
 
         {/* Media Preview or State */}
-        <div className="flex-1 flex items-center justify-center relative p-4">
+        <div className="flex-1 flex items-center justify-center relative p-3">
           {activeTask?.status === 'completed' && activeTask.result_url ? (
             activeTask.media_type === 'video' ? (
               <video
@@ -260,37 +260,37 @@ export const Studio: React.FC = () => {
               />
             )
           ) : activeTask?.status === 'generating' || activeTask?.status === 'downloading' ? (
-            <div className="flex flex-col items-center gap-4 text-center">
-              <div className="relative w-16 h-16 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full border-4 border-[#f59e0b]/20 border-t-[#f59e0b] animate-spin" />
-                <span className="absolute font-mono text-xs font-bold text-[#ffd28a]">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <div className="relative w-10 h-10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full border-2 border-[#f59e0b]/20 border-t-[#f59e0b] animate-spin" />
+                <span className="absolute font-mono text-[10px] font-bold text-[#ffd28a]">
                   {activeTask.provider_pct || 1}%
                 </span>
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">Sedang Memproses...</p>
-                <p className="text-xs text-[#8f9286] mt-1 font-mono">
+                <p className="text-xs font-semibold text-white">Sedang Memproses...</p>
+                <p className="text-[10px] text-[#8f9286] mt-0.5 font-mono">
                   Sisa estimasi ≈ {fmtDuration(activeTask.est_seconds || 180)}
                 </p>
               </div>
             </div>
           ) : activeTask?.status === 'queued' ? (
-            <div className="flex flex-col items-center gap-3 text-center">
-              <Icon name="hourglass_empty" size={32} className="text-[#8f9286] animate-pulse" />
-              <p className="text-sm font-semibold text-white">Menunggu Antrean Divisi</p>
-              <p className="text-xs text-[#8f9286] font-mono">Mulai sebentar lagi…</p>
+            <div className="flex flex-col items-center gap-1.5 text-center">
+              <Icon name="hourglass_empty" size={24} className="text-[#8f9286] animate-pulse" />
+              <p className="text-xs font-semibold text-white">Menunggu Antrean Divisi</p>
+              <p className="text-[10px] text-[#8f9286] font-mono">Mulai sebentar lagi…</p>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-2 text-center text-[#8f9286]">
-              <Icon name="movie_edit" size={40} className="opacity-40" />
-              <p className="text-sm">Belum ada hasil — tulis prompt di bawah</p>
+            <div className="flex flex-col items-center gap-1.5 text-center text-[#8f9286]">
+              <Icon name="movie_edit" size={28} className="opacity-40" />
+              <p className="text-xs">Belum ada hasil — tulis prompt di bawah</p>
             </div>
           )}
         </div>
 
         {/* Bottom Banner Inside Canvas */}
         {activeTask && (
-          <div className="h-10 px-4 bg-[#09151a]/90 backdrop-blur-md border-t border-white/[0.08] flex items-center justify-between text-xs font-mono">
+          <div className="h-7 px-3 bg-[#09151a]/90 backdrop-blur-md border-t border-white/[0.08] flex items-center justify-between text-[10px] font-mono">
             <span className="text-[#d8e5eb] truncate max-w-md">
               Prompt: {truncate(activeTask.prompt, 55)}
             </span>
@@ -301,17 +301,17 @@ export const Studio: React.FC = () => {
         )}
       </div>
 
-      {/* Timeline Strip */}
-      <div className="glass-card mt-4 p-3 rounded-xl flex items-center gap-3 overflow-x-auto">
-        <span className="kicker text-[9px] shrink-0">TIMELINE</span>
+      {/* Timeline Strip (Compact) */}
+      <div className="glass-card mt-2 p-1.5 rounded-xl flex items-center gap-1.5 overflow-x-auto">
+        <span className="kicker text-[8px] shrink-0">TIMELINE</span>
         {/* Upload Reference Button */}
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="w-12 h-12 rounded-lg border border-dashed border-white/20 flex flex-col items-center justify-center text-zinc-400 hover:text-white hover:border-[#9cb080] shrink-0 transition"
+          className="w-8 h-8 rounded-lg border border-dashed border-white/20 flex flex-col items-center justify-center text-zinc-400 hover:text-white hover:border-[#9cb080] shrink-0 transition"
           title="Unggah Gambar Referensi"
         >
-          <Icon name="add" size={18} />
-          <span className="text-[8px] font-mono mt-0.5">Ref</span>
+          <Icon name="add" size={14} />
+          <span className="text-[7px] font-mono">Ref</span>
         </button>
         <input
           type="file"
@@ -326,9 +326,9 @@ export const Studio: React.FC = () => {
           <button
             key={t.task_id}
             onClick={() => setActiveTask(t)}
-            className={`w-12 h-12 rounded-lg overflow-hidden shrink-0 border relative transition ${
+            className={`w-8 h-8 rounded-lg overflow-hidden shrink-0 border relative transition ${
               activeTask?.task_id === t.task_id
-                ? 'border-[#9cb080] ring-2 ring-[#9cb080]/30'
+                ? 'border-[#9cb080] ring-1.5 ring-[#9cb080]/30'
                 : 'border-white/10 hover:border-white/30'
             }`}
           >
@@ -339,11 +339,11 @@ export const Studio: React.FC = () => {
                 <img src={t.result_url} alt="" className="w-full h-full object-cover" />
               )
             ) : (
-              <div className="w-full h-full bg-[#111d22] flex items-center justify-center text-[10px] font-mono text-[#8f9286]">
+              <div className="w-full h-full bg-[#111d22] flex items-center justify-center text-[8px] font-mono text-[#8f9286]">
                 {t.status === 'generating' ? `${t.provider_pct || 1}%` : '…'}
               </div>
             )}
-            <div className="absolute bottom-0 right-0 px-1 bg-black/70 text-[8px] font-mono text-white">
+            <div className="absolute bottom-0 right-0 px-1 bg-black/70 text-[7px] font-mono text-white">
               {t.options?.duration ? `${t.options.duration}s` : 'IMG'}
             </div>
           </button>
@@ -352,51 +352,51 @@ export const Studio: React.FC = () => {
         {/* Gallery shortcut */}
         <button
           onClick={() => navigate('/gallery')}
-          className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-zinc-400 hover:text-white shrink-0 ml-auto"
+          className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-zinc-400 hover:text-white shrink-0 ml-auto"
           title="Buka Gallery"
         >
-          <Icon name="history" size={18} />
+          <Icon name="history" size={15} />
         </button>
       </div>
 
       {/* Alerts */}
       {successNote && (
-        <div className="note-info mt-4 flex items-center gap-2 text-xs">
-          <Icon name="check_circle" size={16} className="text-[#10b981]" />
+        <div className="note-info mt-1.5 flex items-center gap-2 text-xs py-1">
+          <Icon name="check_circle" size={14} className="text-[#10b981]" />
           <span>{successNote}</span>
         </div>
       )}
       {errorNote && (
-        <div className="note-error mt-4 flex items-center gap-2 text-xs">
-          <Icon name="error" size={16} />
+        <div className="note-error mt-1.5 flex items-center gap-2 text-xs py-1">
+          <Icon name="error" size={14} />
           <span>{errorNote}</span>
         </div>
       )}
 
       {/* Floating Prompt Dock (ChatGPT & Gemini AI Floating Style) */}
-      <div className="sticky bottom-4 z-40 w-full max-w-[896px] mx-auto mt-6 transition-all duration-300">
-        <div className="bg-[#0c1419]/92 backdrop-blur-2xl border border-white/[0.12] rounded-3xl p-3.5 shadow-[0_16px_50px_rgba(0,0,0,0.85)] focus-within:border-[#9cb080]/60 focus-within:ring-2 focus-within:ring-[#9cb080]/20 transition-all duration-200">
+      <div className="relative w-full max-w-[680px] mx-auto mt-2 transition-all duration-300">
+        <div className="bg-[#0c1419]/95 backdrop-blur-2xl border border-white/[0.12] rounded-2xl p-2 sm:p-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.8)] focus-within:border-[#9cb080]/60 focus-within:ring-2 focus-within:ring-[#9cb080]/20 transition-all duration-200">
           {/* Top Chips Row */}
-          <div className="flex flex-wrap items-center gap-2 mb-2 px-1">
+          <div className="flex flex-wrap items-center gap-1.5 mb-1 px-1">
             {/* Model Selector Chip */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setModelPopupOpen(!modelPopupOpen)}
-                className="btn btn-ghost px-3 py-1 text-xs font-mono font-semibold rounded-full flex items-center gap-1.5 border-white/10 bg-[#152126]/80 hover:bg-[#202c31]"
+                className="btn btn-ghost px-2 py-0.5 text-[11px] font-mono font-semibold rounded-full flex items-center gap-1 border-white/10 bg-[#152126]/80 hover:bg-[#202c31]"
               >
-                <Icon name="bolt" size={14} className="text-[#ffd28a]" />
+                <Icon name="bolt" size={12} className="text-[#ffd28a]" />
                 <span>{currentModel?.label || 'Veo'} · {currentModel?.credits || 7} KR</span>
-                <Icon name="arrow_drop_down" size={16} />
+                <Icon name="arrow_drop_down" size={14} />
               </button>
 
               {modelPopupOpen && (
                 <div
-                  className="absolute left-0 bottom-full mb-2 w-72 glass-panel p-2 z-50 shadow-2xl rounded-2xl border border-white/15"
+                  className="absolute left-0 bottom-full mb-2 w-64 glass-panel p-2 z-50 shadow-2xl rounded-xl border border-white/15"
                   onMouseLeave={() => setModelPopupOpen(false)}
                 >
-                  <div className="kicker px-2 py-1">MODEL DIIZINKAN DIVISI</div>
-                  <div className="space-y-1 mt-1 max-h-60 overflow-y-auto">
+                  <div className="kicker px-2 py-1 text-[9px]">MODEL DIIZINKAN DIVISI</div>
+                  <div className="space-y-1 mt-1 max-h-52 overflow-y-auto">
                     {models.map((m) => (
                       <button
                         key={m.key}
@@ -406,14 +406,14 @@ export const Studio: React.FC = () => {
                           if (m.options?.duration?.length) setSelectedDuration(m.options.duration[0]);
                           setModelPopupOpen(false);
                         }}
-                        className={`w-full text-left px-3 py-2 rounded-xl flex items-center justify-between text-xs transition ${
+                        className={`w-full text-left px-2.5 py-1.5 rounded-lg flex items-center justify-between text-[11px] transition ${
                           selectedModelKey === m.key
                             ? 'bg-[#2b373c] text-white border border-[#9cb080]/40'
                             : 'hover:bg-white/5 text-[#d8e5eb]'
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          <Icon name={m.type === 'video' ? 'movie' : 'image'} size={16} />
+                          <Icon name={m.type === 'video' ? 'movie' : 'image'} size={14} />
                           <span className="font-semibold">{m.label}</span>
                         </div>
                         <span className="font-mono text-[#ffd28a]">
@@ -431,15 +431,15 @@ export const Studio: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setRatioDropdownOpen(!ratioDropdownOpen)}
-                className="btn btn-ghost px-2.5 py-1 text-xs font-mono rounded-full flex items-center gap-1 border-white/10 bg-[#152126]/80 hover:bg-[#202c31]"
+                className="btn btn-ghost px-2 py-0.5 text-[11px] font-mono rounded-full flex items-center gap-1 border-white/10 bg-[#152126]/80 hover:bg-[#202c31]"
               >
-                <Icon name="aspect_ratio" size={14} />
+                <Icon name="aspect_ratio" size={12} />
                 <span>{selectedAspect}</span>
-                <Icon name="arrow_drop_down" size={16} />
+                <Icon name="arrow_drop_down" size={14} />
               </button>
               {ratioDropdownOpen && (
                 <div
-                  className="absolute left-0 bottom-full mb-2 w-32 glass-panel p-1.5 z-50 rounded-xl border border-white/15"
+                  className="absolute left-0 bottom-full mb-2 w-28 glass-panel p-1.5 z-50 rounded-xl border border-white/15"
                   onMouseLeave={() => setRatioDropdownOpen(false)}
                 >
                   {(currentModel?.options?.aspect || ['9:16', '16:9', '1:1']).map((asp: string) => (
@@ -449,7 +449,7 @@ export const Studio: React.FC = () => {
                         setSelectedAspect(asp);
                         setRatioDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-mono ${
+                      className={`w-full text-left px-2 py-1 rounded text-xs font-mono ${
                         selectedAspect === asp ? 'bg-white/15 text-white' : 'hover:bg-white/5'
                       }`}
                     >
@@ -466,11 +466,11 @@ export const Studio: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setDurationDropdownOpen(!durationDropdownOpen)}
-                  className="btn btn-ghost px-2.5 py-1 text-xs font-mono rounded-full flex items-center gap-1 border-white/10 bg-[#152126]/80 hover:bg-[#202c31]"
+                  className="btn btn-ghost px-2 py-0.5 text-[11px] font-mono rounded-full flex items-center gap-1 border-white/10 bg-[#152126]/80 hover:bg-[#202c31]"
                 >
-                  <Icon name="schedule" size={14} />
+                  <Icon name="schedule" size={12} />
                   <span>{selectedDuration}s</span>
-                  <Icon name="arrow_drop_down" size={16} />
+                  <Icon name="arrow_drop_down" size={14} />
                 </button>
                 {durationDropdownOpen && (
                   <div
@@ -484,7 +484,7 @@ export const Studio: React.FC = () => {
                           setSelectedDuration(dur);
                           setDurationDropdownOpen(false);
                         }}
-                        className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-mono ${
+                        className={`w-full text-left px-2 py-1 rounded text-xs font-mono ${
                           selectedDuration === dur ? 'bg-white/15 text-white' : 'hover:bg-white/5'
                         }`}
                       >
@@ -498,15 +498,15 @@ export const Studio: React.FC = () => {
 
             {/* Reference Asset Chip */}
             {referenceImagePath && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#202c31] border border-[#9cb080]/30 text-xs text-[#9cb080]">
-                <Icon name="image" size={14} />
-                <span className="font-mono text-[11px]">Ref Aktif</span>
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#202c31] border border-[#9cb080]/30 text-[10px] text-[#9cb080]">
+                <Icon name="image" size={12} />
+                <span className="font-mono">Ref</span>
                 <button
                   type="button"
                   onClick={() => setReferenceImagePath(null)}
                   className="text-zinc-400 hover:text-white"
                 >
-                  <Icon name="close" size={13} />
+                  <Icon name="close" size={12} />
                 </button>
               </div>
             )}
@@ -519,9 +519,9 @@ export const Studio: React.FC = () => {
                   setPrompt((prev) => `${prev.trim()}, highly detailed cinematic lighting, 8k octane render, dramatic atmosphere`);
                 }
               }}
-              className="ml-auto text-xs font-semibold text-[#b9ce9b] hover:text-white flex items-center gap-1.5 transition py-1 px-2.5 rounded-full hover:bg-white/5"
+              className="ml-auto text-[11px] font-semibold text-[#b9ce9b] hover:text-white flex items-center gap-1 transition py-0.5 px-2 rounded-full hover:bg-white/5"
             >
-              <Icon name="sparkles" size={14} className="text-amber-300" />
+              <Icon name="sparkles" size={12} className="text-amber-300" />
               <span>Perkaya Prompt</span>
             </button>
           </div>
@@ -534,26 +534,26 @@ export const Studio: React.FC = () => {
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Deskripsikan scene video yang ingin kamu buat… (e.g. Krim pelembab herbal wajah di atas batu pantai saat sunrise)"
-              className="w-full bg-transparent border-0 outline-none text-sm text-[#d8e5eb] placeholder-[#8f9286]/60 resize-none px-2 py-1 leading-relaxed min-h-[52px] focus:ring-0"
+              className="w-full bg-transparent border-0 outline-none text-xs sm:text-[13px] text-[#d8e5eb] placeholder-[#8f9286]/60 resize-none px-1.5 py-0.5 leading-relaxed min-h-[36px] max-h-24 focus:ring-0"
             />
           </div>
 
           {/* Bottom Action Bar inside the Island */}
           <div className="flex items-center justify-between pt-1 px-1 border-t border-white/[0.06]">
             {/* Left Tools & Validation Status */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               {/* Mic Dictation Button */}
               <button
                 type="button"
                 onClick={handleVoiceDictation}
                 title="Dikte Suara (Web Speech API)"
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition ${
+                className={`w-6 h-6 rounded-full flex items-center justify-center transition ${
                   isListening
                     ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse'
                     : 'text-zinc-400 hover:text-white hover:bg-white/10'
                 }`}
               >
-                <Icon name={isListening ? 'mic' : 'mic_none'} size={18} />
+                <Icon name={isListening ? 'mic' : 'mic_none'} size={14} />
               </button>
 
               {/* Add Reference Image */}
@@ -561,15 +561,15 @@ export const Studio: React.FC = () => {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 title="Pasang Gambar Referensi"
-                className="w-8 h-8 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition"
+                className="w-6 h-6 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition"
               >
-                <Icon name="attach_file" size={18} />
+                <Icon name="attach_file" size={14} />
               </button>
 
               {/* Realtime Validation Indicator */}
-              <div className="text-[11px] font-mono flex items-center gap-1.5">
+              <div className="text-[10px] font-mono flex items-center gap-1">
                 {prompt.trim().length === 0 ? (
-                  <span className="text-[#8f9286]/70 hidden sm:inline">Siap mengetik prompt</span>
+                  <span className="text-[#8f9286]/70 hidden sm:inline">Siap mengetik</span>
                 ) : prompt.trim().length < 5 ? (
                   <span className="text-[#ffd28a] flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]" />
@@ -578,16 +578,16 @@ export const Studio: React.FC = () => {
                 ) : (
                   <span className="text-[#10b981] flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
-                    <span>Prompt valid</span>
+                    <span>Valid</span>
                   </span>
                 )}
               </div>
             </div>
 
             {/* Right Action: Cost Preview & Floating Generate Button */}
-            <div className="flex items-center gap-3">
-              <span className="text-[11px] font-mono text-[#8f9286] hidden sm:inline">
-                Biaya <strong className="text-[#ffd28a]">{currentModel?.credits || 7} KR</strong> · ≈ {fmtDuration(currentModel?.est_seconds)}
+            <div className="flex items-center gap-2.5">
+              <span className="text-[10px] font-mono text-[#8f9286] hidden sm:inline">
+                {currentModel?.credits || 7} KR · ≈ {fmtDuration(currentModel?.est_seconds)}
               </span>
 
               <button
@@ -595,12 +595,12 @@ export const Studio: React.FC = () => {
                 onClick={handleGenerate}
                 disabled={loading || prompt.trim().length < 5}
                 title="Generate (Ctrl + Enter)"
-                className="btn btn-indigo h-9 px-4 rounded-full text-xs font-bold shadow-lg shadow-indigo-600/30 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed transition transform active:scale-95"
+                className="btn btn-indigo h-7.5 px-3 rounded-full text-xs font-bold shadow-md shadow-indigo-600/30 flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed transition transform active:scale-95"
               >
                 {loading ? (
-                  <Icon name="sync" size={16} className="animate-fs-spin" />
+                  <Icon name="sync" size={13} className="animate-fs-spin" />
                 ) : (
-                  <Icon name="arrow_upward" size={16} />
+                  <Icon name="arrow_upward" size={13} />
                 )}
                 <span>Generate</span>
               </button>
@@ -609,8 +609,8 @@ export const Studio: React.FC = () => {
         </div>
 
         {/* Small Discreet Caption underneath */}
-        <div className="text-center mt-2 text-[10px] text-[#8f9286]/60 font-mono">
-          Tekan <kbd className="px-1 py-0.5 rounded bg-white/10 text-white">Ctrl + Enter</kbd> untuk generate instan · Kuota sisa: {quota?.remaining ?? 50}
+        <div className="text-center mt-1 text-[9px] text-[#8f9286]/60 font-mono">
+          Ctrl + Enter untuk generate · Kuota sisa: {quota?.remaining ?? 50}
         </div>
       </div>
     </div>

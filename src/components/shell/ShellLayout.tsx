@@ -180,8 +180,8 @@ export const ShellLayout: React.FC = () => {
         </div>
       </header>
 
-      {/* Content Container (max-w-1280px, padding 32px) */}
-      <main className="flex-1 mt-16 max-w-[1280px] w-full mx-auto p-6 md:p-8 flex flex-col">
+      {/* Content Container (max-w-1280px, compact for studio) */}
+      <main className={`flex-1 mt-16 max-w-[1280px] w-full mx-auto ${isStudio ? 'p-3 sm:p-4' : 'p-6 md:p-8'} flex flex-col`}>
         <Outlet />
       </main>
 

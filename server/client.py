@@ -11,6 +11,20 @@ class SnapgenAPIError(Exception):
         self.status_code = status_code
         self.raw_response = raw_response
 
+def _format_error(prefix: str, resp: httpx.Response) -> str:
+    if resp.status_code == 503 or "Site Maintenance" in resp.text:
+        return f"{prefix}: Server provider SnapGen sedang maintenance (HTTP 503). Silakan coba lagi beberapa saat lagi."
+    try:
+        data = resp.json()
+        if isinstance(data, dict):
+            msg = data.get("message") or data.get("error") or data.get("detail")
+            if msg:
+                return f"{prefix}: {msg}"
+    except Exception:
+        pass
+    text = resp.text[:120].strip()
+    return f"{prefix}: HTTP {resp.status_code} - {text}"
+
 class SnapgenClient:
     def __init__(self, base_url: str = SNAPGEN_API_BASE, timeout: float = 60.0):
         self.base_url = base_url.rstrip("/")
@@ -29,7 +43,7 @@ class SnapgenClient:
             resp = await client.get(url, headers=self._headers(api_key))
             if resp.status_code != 200:
                 raise SnapgenAPIError(
-                    f"SnapGen account error: HTTP {resp.status_code} - {resp.text}",
+                    _format_error("Akun SnapGen", resp),
                     status_code=resp.status_code,
                     raw_response=resp.text
                 )
@@ -69,7 +83,7 @@ class SnapgenClient:
 
             if resp.status_code not in (200, 201):
                 raise SnapgenAPIError(
-                    f"SnapGen submit failed: HTTP {resp.status_code} - {resp.text}",
+                    _format_error("Submit generate gagal", resp),
                     status_code=resp.status_code,
                     raw_response=resp.text
                 )
@@ -82,7 +96,7 @@ class SnapgenClient:
             resp = await client.get(url, headers=self._headers(api_key))
             if resp.status_code != 200:
                 raise SnapgenAPIError(
-                    f"SnapGen poll error: HTTP {resp.status_code} - {resp.text}",
+                    _format_error("Status polling gagal", resp),
                     status_code=resp.status_code,
                     raw_response=resp.text
                 )

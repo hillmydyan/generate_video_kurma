@@ -74,19 +74,19 @@ class AppState:
         """Update task in memory, broadcast via SSE, and enqueue DB write."""
         async with self.lock:
             task = self.tasks.get(task_id)
-            if not task:
-                return
-            task["status"] = new_status
-            task["updated_at"] = now().isoformat()
-            for k, v in kwargs.items():
-                task[k] = v
+            if task:
+                task["status"] = new_status
+                task["updated_at"] = now().isoformat()
+                for k, v in kwargs.items():
+                    task[k] = v
 
-        # Broadcast update to user
-        await sse_broker.broadcast_user(task["user_id"], "task_update", task)
-        # Broadcast to admins
-        await sse_broker.broadcast_admin("task_update", task)
+        if task:
+            # Broadcast update to user
+            await sse_broker.broadcast_user(task["user_id"], "task_update", task)
+            # Broadcast to admins
+            await sse_broker.broadcast_admin("task_update", task)
 
-        # Enqueue async DB write
+        # Enqueue async DB write regardless of whether task was cached in memory
         async def _write(session):
             stmt = (
                 update(Task)

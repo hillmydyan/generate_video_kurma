@@ -7,7 +7,7 @@
     "enabled": true,
     "options": {
       "aspect": ["9:16", "16:9"],
-      "duration": [5, 8]
+      "duration": [4, 6, 8]
     },
     "supports_image_ref": true,
     "est_seconds": 190,

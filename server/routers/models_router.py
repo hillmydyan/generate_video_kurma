@@ -11,6 +11,7 @@ router = APIRouter(prefix="/api/models", tags=["models"])
 @router.get("")
 async def get_models(current_user: dict = Depends(get_current_user)):
     """Return active models allowed for user's division (PRD §3.4, §11)."""
+    app_state.load_catalog()
     division_id = current_user.get("division_id", "kantor_a")
     is_super = current_user.get("role") == "SUPER_ADMIN"
 

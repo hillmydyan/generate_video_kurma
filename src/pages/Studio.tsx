@@ -13,7 +13,7 @@ export const Studio: React.FC = () => {
   const [models, setModels] = useState<any[]>([]);
   const [selectedModelKey, setSelectedModelKey] = useState<string>('veo');
   const [selectedAspect, setSelectedAspect] = useState<string>('9:16');
-  const [selectedDuration, setSelectedDuration] = useState<number | null>(5);
+  const [selectedDuration, setSelectedDuration] = useState<number | null>(4);
   const [prompt, setPrompt] = useState('');
   const [referenceImagePath, setReferenceImagePath] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
@@ -280,6 +280,26 @@ export const Studio: React.FC = () => {
               <p className="text-xs font-semibold text-white">Menunggu Antrean Divisi</p>
               <p className="text-[10px] text-[#8f9286] font-mono">Mulai sebentar lagi…</p>
             </div>
+          ) : activeTask?.status === 'failed' ? (
+            <div className="flex flex-col items-center gap-2 text-center p-4 max-w-md">
+              <div className="w-10 h-10 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                <Icon name="error" size={22} />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-rose-400">Generasi Gagal</p>
+                <p className="text-[11px] text-[#8f9286] mt-1 leading-relaxed">
+                  {activeTask.error || 'Server provider tidak merespons atau sedang dalam perbaikan.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPrompt(activeTask.prompt)}
+                className="btn btn-ghost px-2.5 py-1 text-[11px] rounded-lg border border-white/10 hover:bg-white/10 flex items-center gap-1.5 text-zinc-300 transition"
+              >
+                <Icon name="replay" size={13} />
+                <span>Salin Prompt Kembali</span>
+              </button>
+            </div>
           ) : (
             <div className="flex flex-col items-center gap-1.5 text-center text-[#8f9286]">
               <Icon name="movie_edit" size={28} className="opacity-40" />
@@ -338,6 +358,10 @@ export const Studio: React.FC = () => {
               ) : (
                 <img src={t.result_url} alt="" className="w-full h-full object-cover" />
               )
+            ) : t.status === 'failed' ? (
+              <div className="w-full h-full bg-rose-950/40 flex items-center justify-center text-rose-400">
+                <Icon name="error" size={14} />
+              </div>
             ) : (
               <div className="w-full h-full bg-[#111d22] flex items-center justify-center text-[8px] font-mono text-[#8f9286]">
                 {t.status === 'generating' ? `${t.provider_pct || 1}%` : '…'}
@@ -477,7 +501,7 @@ export const Studio: React.FC = () => {
                     className="absolute left-0 bottom-full mb-2 w-28 glass-panel p-1.5 z-50 rounded-xl border border-white/15"
                     onMouseLeave={() => setDurationDropdownOpen(false)}
                   >
-                    {(currentModel?.options?.duration || [5, 8, 10]).map((dur: number) => (
+                    {(currentModel?.options?.duration || [4, 6, 8]).map((dur: number) => (
                       <button
                         key={dur}
                         onClick={() => {

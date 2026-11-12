@@ -160,6 +160,30 @@ class DivisionWorker:
     async def _process_task(self, task_id: str, account_id: str, api_key: str):
         t = app_state.tasks.get(task_id)
         if not t:
+            if AsyncSessionLocal:
+                try:
+                    import json
+                    async with AsyncSessionLocal() as session:
+                        task_obj = await session.get(Task, task_id)
+                        if task_obj:
+                            t = {
+                                "task_id": task_obj.task_id,
+                                "user_id": task_obj.user_id,
+                                "division_id": task_obj.division_id,
+                                "status": task_obj.status,
+                                "prompt": task_obj.prompt,
+                                "image_path": task_obj.image_path,
+                                "model_key": task_obj.model_key,
+                                "media_type": task_obj.media_type,
+                                "options": json.loads(task_obj.options_json) if task_obj.options_json else {},
+                                "credit_cost": task_obj.credit_cost,
+                                "est_seconds": task_obj.est_seconds,
+                            }
+                            app_state.tasks[task_id] = t
+                except Exception as ex:
+                    logger.warning(f"Could not load task {task_id} from DB: {ex}")
+
+        if not t:
             self._release_account(account_id)
             return
 

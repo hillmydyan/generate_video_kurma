@@ -20,8 +20,32 @@ def decrypt_api_key(encrypted_key: str) -> str:
     """Decrypt snapgen API key for worker execution."""
     if not encrypted_key:
         return ""
-    f = _get_fernet()
-    return f.decrypt(encrypted_key.encode("utf-8")).decode("utf-8")
+    # Try primary configured secret
+    try:
+        f = _get_fernet()
+        return f.decrypt(encrypted_key.encode("utf-8")).decode("utf-8")
+    except Exception:
+        pass
+
+    # Try all known historical/fallback secrets
+    known_secrets = [
+        "super_secret_key_enc_secret_change_in_production_32ch!",
+        "super_secret_account_key_32chars_min_snapgen!",
+        ACCOUNT_KEY_SECRET,
+    ]
+    for sec in known_secrets:
+        try:
+            key_bytes = hashlib.sha256(sec.encode("utf-8")).digest()
+            f_fb = Fernet(base64.urlsafe_b64encode(key_bytes))
+            return f_fb.decrypt(encrypted_key.encode("utf-8")).decode("utf-8")
+        except Exception:
+            pass
+
+    # If it's already a plain text key, return as-is
+    if not encrypted_key.startswith("gAAAAA"):
+        return encrypted_key
+
+    return ""
 
 def mask_api_key(key: str) -> str:
     """Mask key showing only last 4 characters e.g. ••••abcd."""

@@ -76,9 +76,14 @@ export const Studio: React.FC = () => {
       const q = await api.tasks.getQuota(user.id);
       setQuota(q);
       const t = await api.tasks.list({ limit: 24 });
-      setTasks(t.tasks || []);
-      if (t.tasks && t.tasks.length > 0 && !activeTask) {
-        setActiveTask(t.tasks[0]);
+      const fetched = t.tasks || [];
+      setTasks(fetched);
+      if (fetched.length > 0) {
+        setActiveTask((prev: any) => {
+          if (!prev) return fetched[0];
+          const updated = fetched.find((item: any) => item.task_id === prev.task_id);
+          return updated ? { ...prev, ...updated } : prev;
+        });
       }
     } catch {}
   };
@@ -86,6 +91,22 @@ export const Studio: React.FC = () => {
   useEffect(() => {
     loadTasksAndQuota();
   }, [user]);
+
+  // Fallback polling every 4s while any task is active (queued / generating / downloading)
+  useEffect(() => {
+    if (!user) return;
+    const hasPending =
+      tasks.some((t) => ['queued', 'generating', 'downloading'].includes(t.status)) ||
+      (activeTask && ['queued', 'generating', 'downloading'].includes(activeTask.status));
+
+    if (!hasPending) return;
+
+    const timer = setInterval(() => {
+      loadTasksAndQuota();
+    }, 4000);
+
+    return () => clearInterval(timer);
+  }, [tasks, activeTask, user]);
 
   // Update on real-time task events
   useEffect(() => {

@@ -233,7 +233,7 @@ export const Studio: React.FC = () => {
           <div className="flex items-center gap-1.5 pointer-events-auto">
             {activeTask && <StatusBadge status={activeTask.status} />}
             <span className="px-2 py-0.5 rounded-full bg-[#152126]/80 backdrop-blur-md border border-white/10 text-[11px] font-mono font-medium text-white">
-              {currentModel?.label || 'Veo'}
+              {currentModel?.label || 'Veo 3.1'}
             </span>
             <span className="px-2 py-0.5 rounded-full bg-[#152126]/80 backdrop-blur-md border border-white/10 text-[11px] font-mono text-[#8f9286]">
               {selectedAspect} · {selectedDuration ? `${selectedDuration}s` : 'IMG'} · 720p
@@ -432,7 +432,7 @@ export const Studio: React.FC = () => {
                 className="btn btn-ghost px-2 py-0.5 text-[11px] font-mono font-semibold rounded-full flex items-center gap-1 border-white/10 bg-[#152126]/80 hover:bg-[#202c31]"
               >
                 <Icon name="bolt" size={12} className="text-[#ffd28a]" />
-                <span>{currentModel?.label || 'Veo'} · {currentModel?.credits || 7} KR</span>
+                <span>{currentModel?.label || 'Veo 3.1'} · {currentModel?.credits || 7} KR</span>
                 <Icon name="arrow_drop_down" size={14} />
               </button>
 

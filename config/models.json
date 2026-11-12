@@ -1,7 +1,7 @@
 [
   {
     "key": "veo",
-    "label": "Veo",
+    "label": "Veo 3.1",
     "type": "video",
     "credits": 20,
     "enabled": true,
@@ -13,7 +13,26 @@
     "est_seconds": 190,
     "endpoint": "/uapi/v1/video-gen/veo",
     "body": "multipart",
-    "provider_model_id": "veo-2",
+    "provider_model_id": "veo-3.1",
+    "provider_params": {
+      "resolution": "720p"
+    }
+  },
+  {
+    "key": "veo_fast",
+    "label": "Veo 3.1 Fast",
+    "type": "video",
+    "credits": 10,
+    "enabled": true,
+    "options": {
+      "aspect": ["9:16", "16:9"],
+      "duration": [4, 6, 8]
+    },
+    "supports_image_ref": true,
+    "est_seconds": 120,
+    "endpoint": "/uapi/v1/video-gen/veo",
+    "body": "multipart",
+    "provider_model_id": "veo-3.1-fast",
     "provider_params": {
       "resolution": "720p"
     }

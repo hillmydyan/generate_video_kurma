@@ -79,6 +79,7 @@ async def submit_generate(
     division_id = current_user["division_id"]
 
     # 1. Validate Model in Catalog
+    app_state.load_catalog()
     model = app_state.get_model(req.model_key)
     if not model or not model.get("enabled", True):
         raise HTTPException(status_code=400, detail="Model tidak aktif atau tidak ditemukan.")

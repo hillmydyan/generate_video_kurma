@@ -190,6 +190,7 @@ class DivisionWorker:
 
         user_id = t["user_id"]
         model_key = t["model_key"]
+        app_state.load_catalog()
         model = app_state.get_model(model_key)
         start_time = time.time()
 
@@ -208,7 +209,7 @@ class DivisionWorker:
 
             params = {
                 "prompt": t["prompt"],
-                "model": model.get("provider_model_id", "veo-2") if model else "veo-2",
+                "model": model.get("provider_model_id", "veo-3.1") if model else "veo-3.1",
                 **provider_params
             }
             # Add options

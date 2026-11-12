@@ -92,6 +92,48 @@ export const Admin: React.FC = () => {
     }
   };
 
+  const handleTestKey = async (accId: string) => {
+    try {
+      const res = await api.admin.testAccountKey(accId);
+      alert(res.message);
+      fetchAdminData();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleChangeKey = async (accId: string) => {
+    const newKey = window.prompt('Masukkan SnapGen API Key baru:');
+    if (!newKey || !newKey.trim()) return;
+    try {
+      await api.admin.updateAccount(accId, { api_key: newKey.trim() });
+      alert('API Key berhasil diperbarui!');
+      fetchAdminData();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleMakePrimary = async (accId: string) => {
+    try {
+      await api.admin.makeAccountPrimary(accId);
+      alert('Akun berhasil dijadikan Primer!');
+      fetchAdminData();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleDeleteAccount = async (accId: string) => {
+    if (!window.confirm('Yakin ingin menghapus akun ini?')) return;
+    try {
+      await api.admin.deleteAccount(accId);
+      fetchAdminData();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -126,7 +168,10 @@ export const Admin: React.FC = () => {
       {/* Header */}
       <div className="glass-card p-6 rounded-2xl flex flex-wrap items-center justify-between gap-4 border border-white/10">
         <div>
-          <span className="kicker">● KONSOL SISTEM & DIVISI / ID: snapgen-prod</span>
+          <span className="kicker flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#9cb080]" />
+            <span>KONSOL SISTEM & DIVISI / ID: snapgen-prod</span>
+          </span>
           <h1 className="text-2xl font-bold font-['Plus_Jakarta_Sans'] text-white mt-1">
             Admin Panel
           </h1>
@@ -199,7 +244,10 @@ export const Admin: React.FC = () => {
           <div className="glass-panel p-6 rounded-2xl">
             <div className="flex items-center justify-between mb-4 border-b border-white/[0.08] pb-3">
               <h3 className="text-sm font-bold text-white">Health Metric Engine</h3>
-              <span className="text-xs font-mono text-[#10b981]">● All Systems Active</span>
+              <span className="text-xs font-mono text-[#10b981] flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
+                <span>All Systems Active</span>
+              </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {overview?.health_metric?.map((hm: any) => (
@@ -309,7 +357,10 @@ export const Admin: React.FC = () => {
               {accounts.map((acc) => (
                 <div key={acc.id} className="glass-card p-5 rounded-xl border border-white/10 space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-bold text-white">{acc.label}</p>
+                    <div>
+                      <p className="text-sm font-bold text-white">{acc.label}</p>
+                      <span className="text-[10px] font-mono text-[#8f9286] uppercase">Slot: {acc.slot || 'primary'}</span>
+                    </div>
                     <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#10b981]/20 text-[#10b981] capitalize">
                       {acc.status}
                     </span>
@@ -318,6 +369,39 @@ export const Admin: React.FC = () => {
                   <div className="flex items-center justify-between text-xs font-mono pt-2 border-t border-white/5">
                     <span>Divisi: <strong className="text-white">{acc.division_id}</strong></span>
                     <span className="text-[#ffd28a] font-bold">{fmtCredits(acc.credits)}</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-white/5 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleTestKey(acc.id)}
+                      className="btn btn-ghost py-1 px-2.5 text-[11px] rounded"
+                    >
+                      Uji Key
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleChangeKey(acc.id)}
+                      className="btn btn-ghost py-1 px-2.5 text-[11px] rounded text-[#9cb080]"
+                    >
+                      Ganti Key
+                    </button>
+                    {acc.slot !== 'primary' && (
+                      <button
+                        type="button"
+                        onClick={() => handleMakePrimary(acc.id)}
+                        className="btn btn-ghost py-1 px-2 text-[10px] rounded"
+                      >
+                        Set Primer
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteAccount(acc.id)}
+                      className="text-[#fb7185] hover:text-red-400 p-1 ml-auto"
+                      title="Hapus Akun"
+                    >
+                      <Icon name="delete" size={16} />
+                    </button>
                   </div>
                 </div>
               ))}

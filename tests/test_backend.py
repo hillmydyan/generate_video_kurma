@@ -45,7 +45,7 @@ async def test_api_full_flow():
             # Login
             res = await ac.post("/api/auth/login", json={
                 "username": user_id,
-                "password": "Password123!"
+                "password": "Password123"
             })
             if res.status_code == 200:
                 token = res.json()["token"]

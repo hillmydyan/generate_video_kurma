@@ -62,8 +62,9 @@ export const Pabrik: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="px-3 py-1.5 rounded-full bg-[#111d22] border border-white/10 text-xs font-mono text-[#9cb080]">
-            ● {activeBatch ? '1 BATCH AKTIF' : '0 BATCH AKTIF'}
+          <span className="px-3 py-1.5 rounded-full bg-[#111d22] border border-white/10 text-xs font-mono text-[#9cb080] flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#9cb080] animate-pulse" />
+            <span>{activeBatch ? '1 BATCH AKTIF' : '0 BATCH AKTIF'}</span>
           </span>
           <span className="px-3 py-1.5 rounded-full bg-[#111d22] border border-white/10 text-xs font-mono text-white">
             Slot paralel: 2

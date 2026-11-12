@@ -224,6 +224,110 @@ async def create_account(req: AccountCreateRequest, super_admin: dict = Depends(
         await session.commit()
     return {"success": True}
 
+class AccountUpdateRequest(BaseModel):
+    label: Optional[str] = None
+    api_key: Optional[str] = None
+    division_id: Optional[str] = None
+    slot: Optional[str] = None
+    status: Optional[str] = None
+
+@router.patch("/accounts/{account_id}")
+async def update_account(
+    account_id: str,
+    req: AccountUpdateRequest,
+    super_admin: dict = Depends(require_super_admin)
+):
+    """Ganti key atau setelan akun provider snapgen langsung dari UI (PRD §5, §11)."""
+    async with AsyncSessionLocal() as session:
+        acc = await session.get(ProviderAccount, account_id)
+        if not acc:
+            raise HTTPException(status_code=404, detail="Akun tidak ditemukan.")
+
+        if req.label is not None:
+            acc.label = req.label.strip()
+        if req.api_key is not None and req.api_key.strip():
+            acc.api_key_enc = encrypt_api_key(req.api_key.strip())
+            acc.status = "active"
+        if req.division_id is not None:
+            acc.division_id = req.division_id
+        if req.slot is not None:
+            acc.slot = req.slot
+        if req.status is not None:
+            acc.status = req.status
+
+        await session.commit()
+    return {"success": True, "account_id": account_id}
+
+@router.delete("/accounts/{account_id}")
+async def delete_account(
+    account_id: str,
+    super_admin: dict = Depends(require_super_admin)
+):
+    async with AsyncSessionLocal() as session:
+        acc = await session.get(ProviderAccount, account_id)
+        if not acc:
+            raise HTTPException(status_code=404, detail="Akun tidak ditemukan.")
+        await session.delete(acc)
+        await session.commit()
+    return {"success": True}
+
+@router.post("/accounts/{account_id}/test")
+async def test_account_key(
+    account_id: str,
+    super_admin: dict = Depends(require_super_admin)
+):
+    """Uji validitas key langsung ke SnapGen API (PRD §5)."""
+    async with AsyncSessionLocal() as session:
+        acc = await session.get(ProviderAccount, account_id)
+        if not acc:
+            raise HTTPException(status_code=404, detail="Akun tidak ditemukan.")
+
+        raw_key = decrypt_api_key(acc.api_key_enc)
+        client = SnapgenClient()
+        try:
+            info = await client.get_account(raw_key)
+            avail = info.get("user_credit", {}).get("available_credit", 0)
+            acc.credits_cached = avail
+            acc.credits_checked_at = now()
+            acc.status = "active" if avail >= 300 else ("credits_low" if avail > 0 else "depleted")
+            await session.commit()
+            return {
+                "valid": True,
+                "credits": avail,
+                "plan": info.get("plan_id", "Premium"),
+                "status": acc.status,
+                "message": f"Key valid! Saldo: {avail} KR"
+            }
+        except Exception as e:
+            acc.status = "expired"
+            await session.commit()
+            return {
+                "valid": False,
+                "error": str(e),
+                "message": "Key tidak valid atau telah kedaluwarsa."
+            }
+
+@router.post("/accounts/{account_id}/primary")
+async def make_primary(
+    account_id: str,
+    super_admin: dict = Depends(require_super_admin)
+):
+    """Jadikan akun ini sebagai primer untuk divisinya (PRD §5)."""
+    async with AsyncSessionLocal() as session:
+        acc = await session.get(ProviderAccount, account_id)
+        if not acc:
+            raise HTTPException(status_code=404, detail="Akun tidak ditemukan.")
+        # Demote existing primary for this division
+        stmt = (
+            update(ProviderAccount)
+            .where(and_(ProviderAccount.division_id == acc.division_id, ProviderAccount.slot == "primary"))
+            .values(slot="secondary")
+        )
+        await session.execute(stmt)
+        acc.slot = "primary"
+        await session.commit()
+    return {"success": True}
+
 # --- Reset Code ---
 
 @router.get("/reset-code")

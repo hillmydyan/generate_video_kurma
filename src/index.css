@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "material-symbols";
 
 @theme {
   --color-bg-base: #09151a;

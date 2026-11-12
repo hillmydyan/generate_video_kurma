@@ -127,6 +127,24 @@ export const api = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       }),
+    updateAccount: (id: string, body: any) =>
+      request<any>(`/api/admin/accounts/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+    deleteAccount: (id: string) =>
+      request<any>(`/api/admin/accounts/${id}`, {
+        method: "DELETE",
+      }),
+    testAccountKey: (id: string) =>
+      request<any>(`/api/admin/accounts/${id}/test`, {
+        method: "POST",
+      }),
+    makeAccountPrimary: (id: string) =>
+      request<any>(`/api/admin/accounts/${id}/primary`, {
+        method: "POST",
+      }),
     getUsers: () => request<any>("/api/admin/users"),
     createUser: (body: any) =>
       request<any>("/api/admin/users", {

@@ -143,7 +143,7 @@ export const ShellLayout: React.FC = () => {
 
           {/* Division Credit Chip */}
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#111d22] border border-[#f59e0b]/30 text-xs font-mono font-semibold text-[#ffd28a]">
-            <span>⚡</span>
+            <Icon name="bolt" size={14} className="text-[#ffd28a]" />
             <span>{fmtCredits(divisionCredits != null ? divisionCredits : 1250)}</span>
           </div>
 

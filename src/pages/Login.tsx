@@ -81,8 +81,9 @@ export const Login: React.FC = () => {
 
       {/* Login Card */}
       <div className="w-full max-w-[388px] glass-panel p-8">
-        <div className="kicker mb-1">
-          ● AKSES STUDIO
+        <div className="kicker mb-1 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#9cb080]" />
+          <span>AKSES STUDIO</span>
         </div>
         <h1 className="text-xl font-bold font-['Plus_Jakarta_Sans'] text-white mb-6">
           {mode === 'login' && 'Masuk'}
@@ -180,7 +181,7 @@ export const Login: React.FC = () => {
             {loading ? (
               <Icon name="sync" size={18} className="animate-fs-spin" />
             ) : (
-              <span>⚡</span>
+              <Icon name="bolt" size={18} />
             )}
             <span>
               {mode === 'login' && 'Masuk'}

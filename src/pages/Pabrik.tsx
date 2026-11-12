@@ -68,7 +68,7 @@ export const Pabrik: React.FC = () => {
   const lList = lightingValues.split('\n').map((x) => x.trim()).filter((x) => x.length > 0);
   const totalCombinations = (pList.length || 1) * (lList.length || 1);
   const totalTasks = totalCombinations * variations;
-  const costPerVideo = currentModel?.credits || 7;
+  const costPerVideo = currentModel?.credits ?? 4;
   const totalCost = totalTasks * costPerVideo;
 
   const handleStartBatch = async () => {

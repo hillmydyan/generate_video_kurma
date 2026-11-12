@@ -209,7 +209,7 @@ class DivisionWorker:
 
             params = {
                 "prompt": t["prompt"],
-                "model": model.get("provider_model_id", "veo-3.1") if model else "veo-3.1",
+                "model": model.get("provider_model_id", "veo-3.1-fast") if model else "veo-3.1-fast",
                 **provider_params
             }
             # Add options

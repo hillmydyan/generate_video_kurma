@@ -1,28 +1,9 @@
 [
   {
     "key": "veo",
-    "label": "Veo 3.1",
+    "label": "Veo 3.1 Fast Full HD",
     "type": "video",
-    "credits": 20,
-    "enabled": true,
-    "options": {
-      "aspect": ["9:16", "16:9"],
-      "duration": [4, 6, 8]
-    },
-    "supports_image_ref": true,
-    "est_seconds": 190,
-    "endpoint": "/uapi/v1/video-gen/veo",
-    "body": "multipart",
-    "provider_model_id": "veo-3.1",
-    "provider_params": {
-      "resolution": "720p"
-    }
-  },
-  {
-    "key": "veo_fast",
-    "label": "Veo 3.1 Fast",
-    "type": "video",
-    "credits": 10,
+    "credits": 4,
     "enabled": true,
     "options": {
       "aspect": ["9:16", "16:9"],
@@ -34,7 +15,45 @@
     "body": "multipart",
     "provider_model_id": "veo-3.1-fast",
     "provider_params": {
-      "resolution": "720p"
+      "resolution": "1080p"
+    }
+  },
+  {
+    "key": "veo_free",
+    "label": "Veo 3.1 Fast FHD (Free)",
+    "type": "video",
+    "credits": 0,
+    "enabled": true,
+    "options": {
+      "aspect": ["9:16", "16:9"],
+      "duration": [4, 6, 8]
+    },
+    "supports_image_ref": true,
+    "est_seconds": 120,
+    "endpoint": "/uapi/v1/video-gen/veo",
+    "body": "multipart",
+    "provider_model_id": "veo-3.1-fast-free",
+    "provider_params": {
+      "resolution": "1080p"
+    }
+  },
+  {
+    "key": "veo_pro",
+    "label": "Veo 3.1 Full HD (Pro)",
+    "type": "video",
+    "credits": 100,
+    "enabled": true,
+    "options": {
+      "aspect": ["9:16", "16:9"],
+      "duration": [4, 6, 8]
+    },
+    "supports_image_ref": true,
+    "est_seconds": 190,
+    "endpoint": "/uapi/v1/video-gen/veo",
+    "body": "multipart",
+    "provider_model_id": "veo-3.1",
+    "provider_params": {
+      "resolution": "1080p"
     }
   },
   {

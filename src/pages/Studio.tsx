@@ -233,10 +233,10 @@ export const Studio: React.FC = () => {
           <div className="flex items-center gap-1.5 pointer-events-auto">
             {activeTask && <StatusBadge status={activeTask.status} />}
             <span className="px-2 py-0.5 rounded-full bg-[#152126]/80 backdrop-blur-md border border-white/10 text-[11px] font-mono font-medium text-white">
-              {currentModel?.label || 'Veo 3.1'}
+              {currentModel?.label || 'Veo 3.1 Fast Full HD'}
             </span>
             <span className="px-2 py-0.5 rounded-full bg-[#152126]/80 backdrop-blur-md border border-white/10 text-[11px] font-mono text-[#8f9286]">
-              {selectedAspect} · {selectedDuration ? `${selectedDuration}s` : 'IMG'} · 720p
+              {selectedAspect} · {selectedDuration ? `${selectedDuration}s` : 'IMG'} · {selectedModelKey.startsWith('veo') ? '1080p' : '720p'}
             </span>
           </div>
 
@@ -432,7 +432,7 @@ export const Studio: React.FC = () => {
                 className="btn btn-ghost px-2 py-0.5 text-[11px] font-mono font-semibold rounded-full flex items-center gap-1 border-white/10 bg-[#152126]/80 hover:bg-[#202c31]"
               >
                 <Icon name="bolt" size={12} className="text-[#ffd28a]" />
-                <span>{currentModel?.label || 'Veo 3.1'} · {currentModel?.credits || 7} KR</span>
+                <span>{currentModel?.label || 'Veo 3.1 Fast Full HD'} · {currentModel?.credits ?? 4} KR</span>
                 <Icon name="arrow_drop_down" size={14} />
               </button>
 
@@ -633,7 +633,7 @@ export const Studio: React.FC = () => {
             {/* Right Action: Cost Preview & Floating Generate Button */}
             <div className="flex items-center gap-2.5">
               <span className="text-[10px] font-mono text-[#8f9286] hidden sm:inline">
-                {currentModel?.credits || 7} KR · ≈ {fmtDuration(currentModel?.est_seconds)}
+                {currentModel?.credits ?? 4} KR · ≈ {fmtDuration(currentModel?.est_seconds)}
               </span>
 
               <button

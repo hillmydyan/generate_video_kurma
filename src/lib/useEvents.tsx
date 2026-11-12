@@ -55,9 +55,13 @@ export const EventsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
 
     es.onerror = () => {
+      // EventSource automatically reconnects when readyState is CONNECTING (0)
+      if (es.readyState === EventSource.CONNECTING) {
+        return;
+      }
       setConnState("offline");
       es.close();
-      // Reconnect after 3 seconds
+      // Reconnect after 3 seconds if permanently closed
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = setTimeout(() => {
         connect();

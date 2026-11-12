@@ -148,20 +148,33 @@ AsyncSessionLocal = _AsyncSessionLocalProxy()
 async def init_db():
     global engine, _session_maker
     target_url = POSTGRES_URL
-    try:
-        engine = create_async_engine(target_url, echo=False)
-        # Test connection
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        logger.info(f"Connected to PostgreSQL database at {target_url}")
-    except Exception as e:
-        logger.warning(f"PostgreSQL connection failed ({e}). Falling back to local SQLite for development mirror.")
+    use_postgres = True
+
+    if "localhost" in target_url or "127.0.0.1" in target_url:
+        import socket
+        try:
+            with socket.create_connection(("127.0.0.1", 5432), timeout=0.2):
+                pass
+        except OSError:
+            use_postgres = False
+
+    if use_postgres:
+        try:
+            engine = create_async_engine(target_url, echo=False)
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            logger.info(f"Connected to PostgreSQL database at {target_url}")
+        except Exception as e:
+            logger.warning(f"PostgreSQL connection failed ({e}). Falling back to local SQLite.")
+            use_postgres = False
+
+    if not use_postgres:
         fallback_path = DATA_DIR / "snapgen_dev.db"
         fallback_url = f"sqlite+aiosqlite:///{fallback_path}"
         engine = create_async_engine(fallback_url, echo=False)
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        logger.info(f"Initialized fallback SQLite database at {fallback_url}")
+        logger.info(f"Initialized local SQLite database at {fallback_url}")
 
     _session_maker = async_sessionmaker(
         bind=engine,

@@ -83,17 +83,19 @@ async def sse_events(request: Request, token: str = Query(...)):
 
     async def event_generator():
         try:
-            # Send initial ping & connection handshake
-            yield f"event: ping\ndata: {{\"status\": \"connected\"}}\n\n"
-            while True:
+            # Send initial ping & retry interval so EventSource seamlessly reconnects
+            yield "retry: 1500\nevent: ping\ndata: {\"status\": \"connected\"}\n\n"
+            for _ in range(10):
                 if await request.is_disconnected():
                     break
                 try:
-                    payload = await asyncio.wait_for(queue.get(), timeout=20.0)
+                    payload = await asyncio.wait_for(queue.get(), timeout=1.5)
                     yield payload
                 except asyncio.TimeoutError:
-                    # Heartbeat keep-alive ping
-                    yield "event: ping\ndata: {}\n\n"
+                    continue
+            yield "event: ping\ndata: {}\n\n"
+        except asyncio.CancelledError:
+            pass
         finally:
             await sse_broker.disconnect(user_id, queue)
 

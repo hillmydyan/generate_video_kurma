@@ -26,13 +26,10 @@ export const Gallery: React.FC = () => {
 
   const user = JSON.parse(localStorage.getItem('snapgen_user') || '{}');
 
-  const fetchGalleryData = async () => {
+  const fetchGalleryData = async (silent: boolean = false) => {
     if (!user.id) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
-      const statsRes = await api.tasks.getStats(user.id);
-      setStats(statsRes);
-
       const params: Record<string, any> = { page, limit: 24 };
       if (filterType === 'video_9_16') {
         params.media_type = 'video';
@@ -50,10 +47,20 @@ export const Gallery: React.FC = () => {
         params.q = searchQuery.trim();
       }
 
-      const tasksRes = await api.tasks.list(params);
-      setTasks(tasksRes.tasks || []);
-      setTotalPages(tasksRes.total_pages || 1);
-      setTotalCount(tasksRes.total || 0);
+      const [statsResult, tasksResult] = await Promise.allSettled([
+        api.tasks.getStats(user.id),
+        api.tasks.list(params),
+      ]);
+
+      if (statsResult.status === 'fulfilled') {
+        setStats(statsResult.value);
+      }
+      if (tasksResult.status === 'fulfilled') {
+        const tasksRes = tasksResult.value;
+        setTasks(tasksRes.tasks || []);
+        setTotalPages(tasksRes.total_pages || 1);
+        setTotalCount(tasksRes.total || 0);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -64,6 +71,16 @@ export const Gallery: React.FC = () => {
   useEffect(() => {
     fetchGalleryData();
   }, [page, filterType, filterStatus]);
+
+  // Auto-poll every 4s while any task is queued, generating, or downloading
+  useEffect(() => {
+    const hasPending = tasks.some((t) =>
+      ['queued', 'generating', 'downloading'].includes(t.status)
+    );
+    if (!hasPending) return;
+    const timer = setInterval(() => fetchGalleryData(true), 4000);
+    return () => clearInterval(timer);
+  }, [tasks, page, filterType, filterStatus]);
 
   useEffect(() => {
     if (lastTaskUpdate) {
@@ -178,16 +195,16 @@ export const Gallery: React.FC = () => {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4 glass-card p-3 rounded-xl">
         <div className="flex items-center gap-2 flex-1 max-w-md">
-          <div className="relative w-full">
+          <div className="glass-input flex items-center gap-2.5 px-3 py-1.5 w-full">
+            <Icon name="search" size={15} className="text-zinc-400 shrink-0" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && fetchGalleryData()}
               placeholder="Cari prompt, ID aset, atau model…"
-              className="w-full glass-input text-xs pl-8 pr-3 py-2 font-mono"
+              className="w-full bg-transparent border-0 outline-none text-xs font-mono text-white placeholder-[#8f9286]/70 focus:ring-0"
             />
-            <Icon name="search" size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
           </div>
         </div>
 

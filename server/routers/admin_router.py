@@ -11,7 +11,7 @@ from server.auth import (
     hash_password, get_current_reset_code, rotate_reset_code
 )
 from server.crypto import encrypt_api_key, decrypt_api_key, mask_api_key
-from server.dependencies import require_admin, require_super_admin
+from server.dependencies import get_current_user, require_admin, require_super_admin
 from server.state import app_state
 from server.client import SnapgenClient
 from config.clock import now
@@ -68,21 +68,27 @@ async def get_overview(admin: dict = Depends(require_admin)):
         }
 
 @router.get("/credits")
-async def get_credits(refresh: int = Query(0), admin: dict = Depends(require_admin)):
+async def get_credits(refresh: int = Query(0), user: dict = Depends(get_current_user)):
     """Fetch cached or live account balances (PRD §5)."""
     client = SnapgenClient()
     results = []
+    updated_any = False
+    current_time = now()
 
     async with AsyncSessionLocal() as session:
         accounts = (await session.execute(select(ProviderAccount))).scalars().all()
         for acc in accounts:
-            if refresh == 1 and acc.status != "disabled":
+            is_stale = (
+                acc.credits_checked_at is None
+                or (current_time - acc.credits_checked_at).total_seconds() > 20
+            )
+            if (refresh == 1 or is_stale) and acc.status != "disabled":
                 try:
                     decrypted_key = decrypt_api_key(acc.api_key_enc)
                     info = await client.get_account(decrypted_key)
                     avail = info.get("user_credit", {}).get("available_credit", 0)
                     acc.credits_cached = avail
-                    acc.credits_checked_at = now()
+                    acc.credits_checked_at = current_time
                     floor = get_setting("CREDIT_BALANCE_FLOOR", 300)
                     if avail <= 0:
                         acc.status = "depleted"
@@ -90,6 +96,7 @@ async def get_credits(refresh: int = Query(0), admin: dict = Depends(require_adm
                         acc.status = "credits_low"
                     else:
                         acc.status = "active"
+                    updated_any = True
                 except Exception as e:
                     logger.error(f"Failed to refresh credits for {acc.label}: {e}")
 
@@ -102,7 +109,7 @@ async def get_credits(refresh: int = Query(0), admin: dict = Depends(require_adm
                 "credits": acc.credits_cached,
                 "checked_at": acc.credits_checked_at.isoformat() if acc.credits_checked_at else None,
             })
-        if refresh == 1:
+        if updated_any:
             await session.commit()
 
     return {"accounts": results}

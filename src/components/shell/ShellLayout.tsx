@@ -8,9 +8,10 @@ import { api } from '@/lib/api';
 export const ShellLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { connState } = useEventsCtx();
+  const { connState, lastTaskUpdate } = useEventsCtx();
   const [user, setUser] = useState<any>(null);
   const [divisionCredits, setDivisionCredits] = useState<number | null>(null);
+  const [refreshingCredits, setRefreshingCredits] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -26,27 +27,43 @@ export const ShellLayout: React.FC = () => {
     }
   }, [navigate]);
 
-  useEffect(() => {
-    // Poll credits every 60s
-    const fetchCredits = async () => {
-      try {
-        const res = await api.admin.getCredits(0);
-        if (res.accounts && res.accounts.length > 0) {
-          const userDiv = user?.division_id || 'kantor_a';
-          const divAccs = res.accounts.filter((a: any) => a.division_id === userDiv);
-          const total = divAccs.reduce((sum: number, a: any) => sum + (a.credits || 0), 0);
-          setDivisionCredits(total);
-        }
-      } catch {
-        // Silently ignore for non-admins or offline
+  const fetchCredits = async (refresh: number = 0) => {
+    if (!user) return;
+    if (refresh === 1) setRefreshingCredits(true);
+    try {
+      const res = await api.admin.getCredits(refresh);
+      if (res.accounts && res.accounts.length > 0) {
+        const userDiv = user?.division_id || 'kantor_a';
+        const divAccs = res.accounts.filter((a: any) => a.division_id === userDiv);
+        const total = divAccs.reduce((sum: number, a: any) => sum + (a.credits || 0), 0);
+        setDivisionCredits(total);
       }
-    };
+    } catch {
+      // Silently ignore
+    } finally {
+      if (refresh === 1) setRefreshingCredits(false);
+    }
+  };
 
+  useEffect(() => {
     if (user) {
-      fetchCredits();
-      const interval = setInterval(fetchCredits, 60000);
+      fetchCredits(1);
+      const interval = setInterval(() => fetchCredits(0), 15000);
       return () => clearInterval(interval);
     }
+  }, [user]);
+
+  // Refresh credits whenever a task starts or finishes
+  useEffect(() => {
+    if (user && lastTaskUpdate) {
+      fetchCredits(1);
+    }
+  }, [lastTaskUpdate]);
+
+  useEffect(() => {
+    const onRefresh = () => fetchCredits(1);
+    window.addEventListener('snapgen_credits_refresh', onRefresh);
+    return () => window.removeEventListener('snapgen_credits_refresh', onRefresh);
   }, [user]);
 
   const handleLogout = async () => {
@@ -142,10 +159,19 @@ export const ShellLayout: React.FC = () => {
           </div>
 
           {/* Division Credit Chip */}
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#111d22] border border-[#f59e0b]/30 text-xs font-mono font-semibold text-[#ffd28a]">
-            <Icon name="bolt" size={14} className="text-[#ffd28a]" />
-            <span>{fmtCredits(divisionCredits != null ? divisionCredits : 1250)}</span>
-          </div>
+          <button
+            type="button"
+            onClick={() => fetchCredits(1)}
+            title="Klik untuk sinkronisasi saldo kredit terbaru dari SnapGen"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#111d22] hover:bg-[#1a2a31] border border-[#f59e0b]/30 text-xs font-mono font-semibold text-[#ffd28a] transition cursor-pointer"
+          >
+            <Icon
+              name={refreshingCredits ? 'sync' : 'bolt'}
+              size={14}
+              className={`text-[#ffd28a] ${refreshingCredits ? 'animate-fs-spin' : ''}`}
+            />
+            <span>{divisionCredits != null ? fmtCredits(divisionCredits) : '… KR'}</span>
+          </button>
 
           {/* User Avatar Menu */}
           <div className="relative">

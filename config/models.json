@@ -3,7 +3,7 @@
     "key": "veo",
     "label": "Veo",
     "type": "video",
-    "credits": 7,
+    "credits": 20,
     "enabled": true,
     "options": {
       "aspect": ["9:16", "16:9"],

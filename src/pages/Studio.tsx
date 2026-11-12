@@ -162,6 +162,7 @@ export const Studio: React.FC = () => {
       setSuccessNote(`Task masuk antrean · estimasi selesai ≈ ${fmtTime(new Date(Date.now() + (res.estimate?.total_sec || 180) * 1000))} WIB`);
       setTimeout(() => setSuccessNote(null), 9000);
       loadTasksAndQuota();
+      setTimeout(() => window.dispatchEvent(new Event('snapgen_credits_refresh')), 2500);
     } catch (err: any) {
       setErrorNote(err.message || 'Gagal memproses pengiriman.');
     } finally {

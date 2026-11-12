@@ -243,6 +243,7 @@ class DivisionWorker:
                 credit_estimated=est_credit,
                 provider_pct=resp.get("status_percentage", 1)
             )
+            await self._sync_account_credits(account_id, api_key, increment_output=False)
 
             # Start polling loop
             poll_interval = get_setting("POLL_INTERVAL_SEC", 10)
@@ -300,6 +301,7 @@ class DivisionWorker:
                 finished_at=now().isoformat(),
                 gen_sec=gen_sec
             )
+            await self._sync_account_credits(account_id, api_key, increment_output=True)
 
             # Record behavior for learning/estimation
             try:
@@ -333,6 +335,32 @@ class DivisionWorker:
             self._release_account(account_id)
             async with app_state.lock:
                 app_state.user_in_flight[user_id] = max(0, app_state.user_in_flight.get(user_id, 1) - 1)
+
+    async def _sync_account_credits(self, account_id: str, api_key: str, increment_output: bool = False):
+        """Fetch live credit balance from SnapGen and update cached DB record."""
+        try:
+            info = await self.client.get_account(api_key)
+            avail = info.get("user_credit", {}).get("available_credit")
+            if avail is not None and AsyncSessionLocal:
+                async with AsyncSessionLocal() as session:
+                    acc = await session.get(ProviderAccount, account_id)
+                    if acc:
+                        acc.credits_cached = int(avail)
+                        acc.credits_checked_at = now()
+                        acc.last_used_at = now()
+                        if increment_output:
+                            acc.outputs_today = (acc.outputs_today or 0) + 1
+                            acc.outputs_total = (acc.outputs_total or 0) + 1
+                        floor = get_setting("CREDIT_BALANCE_FLOOR", 300)
+                        if avail <= 0:
+                            acc.status = "depleted"
+                        elif avail < floor:
+                            acc.status = "credits_low"
+                        elif acc.status in ("credits_low", "depleted"):
+                            acc.status = "active"
+                        await session.commit()
+        except Exception as ex:
+            logger.warning(f"Failed to sync credits for account {account_id}: {ex}")
 
     async def _handle_task_failure(self, task_id: str, error_message: str):
         await app_state.update_task_status(

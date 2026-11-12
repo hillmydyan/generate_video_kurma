@@ -1,0 +1,205 @@
+[
+  {
+    "key": "veo",
+    "label": "Veo",
+    "type": "video",
+    "credits": 7,
+    "enabled": true,
+    "options": {
+      "aspect": ["9:16", "16:9"],
+      "duration": [5, 8]
+    },
+    "supports_image_ref": true,
+    "est_seconds": 190,
+    "endpoint": "/uapi/v1/video-gen/veo",
+    "body": "multipart",
+    "provider_model_id": "veo-2",
+    "provider_params": {
+      "resolution": "720p"
+    }
+  },
+  {
+    "key": "grok_video",
+    "label": "Grok Video",
+    "type": "video",
+    "credits": 10,
+    "enabled": true,
+    "options": {
+      "aspect": ["9:16", "16:9", "1:1"],
+      "duration": [6]
+    },
+    "supports_image_ref": true,
+    "est_seconds": 150,
+    "endpoint": "/uapi/v1/video-gen/grok",
+    "body": "multipart",
+    "provider_model_id": "grok-video",
+    "provider_params": {
+      "resolution": "480p",
+      "mode": "custom",
+      "skip_audio": false
+    }
+  },
+  {
+    "key": "seedance",
+    "label": "Bytedance Seedance",
+    "type": "video",
+    "credits": 20,
+    "enabled": true,
+    "options": {
+      "aspect": ["9:16", "16:9", "1:1"],
+      "duration": [4]
+    },
+    "supports_image_ref": true,
+    "est_seconds": 210,
+    "endpoint": "/uapi/v1/video-gen/seedance",
+    "body": "form",
+    "provider_model_id": "seedance",
+    "provider_params": {
+      "resolution": "720p",
+      "mode": "fast"
+    }
+  },
+  {
+    "key": "kling",
+    "label": "Kling",
+    "type": "video",
+    "credits": 26,
+    "enabled": true,
+    "options": {
+      "aspect": ["9:16", "16:9", "1:1"],
+      "duration": [5, 10]
+    },
+    "supports_image_ref": true,
+    "est_seconds": 240,
+    "endpoint": "/uapi/v1/video-gen/kling",
+    "body": "form",
+    "provider_model_id": "kling-video-3-0",
+    "provider_params": {
+      "mode": "standard"
+    }
+  },
+  {
+    "key": "grok_image",
+    "label": "Grok Image",
+    "type": "image",
+    "credits": 2,
+    "enabled": true,
+    "options": {
+      "aspect": ["9:16", "16:9", "1:1"],
+      "duration": []
+    },
+    "supports_image_ref": true,
+    "est_seconds": 30,
+    "endpoint": "/uapi/v1/imagen/grok",
+    "body": "multipart",
+    "provider_model_id": "grok-image",
+    "provider_params": {
+      "num_result": 1
+    }
+  },
+  {
+    "key": "gpt_image_2",
+    "label": "GPT Image 2",
+    "type": "image",
+    "credits": 4,
+    "enabled": true,
+    "options": {
+      "aspect": ["9:16", "16:9", "1:1", "4:3", "21:9"],
+      "duration": []
+    },
+    "supports_image_ref": true,
+    "est_seconds": 45,
+    "endpoint": "/uapi/v1/imagen/gpt-image-2",
+    "body": "multipart",
+    "provider_model_id": "gpt-image-2",
+    "provider_params": {
+      "mode": "low",
+      "resolution": "2K"
+    }
+  },
+  {
+    "key": "omni_flash",
+    "label": "Omni Flash",
+    "type": "video",
+    "credits": 5,
+    "enabled": false,
+    "options": { "aspect": ["16:9", "9:16"], "duration": [5] },
+    "supports_image_ref": false,
+    "est_seconds": 120,
+    "endpoint": "",
+    "body": "multipart",
+    "provider_model_id": "",
+    "provider_params": {}
+  },
+  {
+    "key": "minimax",
+    "label": "Minimax",
+    "type": "video",
+    "credits": 1,
+    "enabled": false,
+    "options": { "aspect": ["16:9", "9:16"], "duration": [5] },
+    "supports_image_ref": false,
+    "est_seconds": 120,
+    "endpoint": "",
+    "body": "multipart",
+    "provider_model_id": "",
+    "provider_params": {}
+  },
+  {
+    "key": "nano_banana",
+    "label": "Nano Banana",
+    "type": "image",
+    "credits": 3,
+    "enabled": false,
+    "options": { "aspect": ["1:1", "16:9", "9:16"], "duration": [] },
+    "supports_image_ref": true,
+    "est_seconds": 25,
+    "endpoint": "/uapi/v1/generate_image",
+    "body": "multipart",
+    "provider_model_id": "nano-banana",
+    "provider_params": {}
+  },
+  {
+    "key": "black_forest_labs",
+    "label": "Black Forest Labs",
+    "type": "image",
+    "credits": 2,
+    "enabled": false,
+    "options": { "aspect": ["1:1", "16:9", "9:16"], "duration": [] },
+    "supports_image_ref": true,
+    "est_seconds": 30,
+    "endpoint": "/uapi/v1/generate_image",
+    "body": "multipart",
+    "provider_model_id": "bfl",
+    "provider_params": {}
+  },
+  {
+    "key": "vela_ai",
+    "label": "Vela AI",
+    "type": "image",
+    "credits": 2,
+    "enabled": false,
+    "options": { "aspect": ["1:1", "16:9", "9:16"], "duration": [] },
+    "supports_image_ref": true,
+    "est_seconds": 30,
+    "endpoint": "/uapi/v1/generate_image",
+    "body": "multipart",
+    "provider_model_id": "vela",
+    "provider_params": {}
+  },
+  {
+    "key": "muse_ai",
+    "label": "Muse AI",
+    "type": "image",
+    "credits": 1,
+    "enabled": false,
+    "options": { "aspect": ["1:1", "16:9", "9:16"], "duration": [] },
+    "supports_image_ref": true,
+    "est_seconds": 30,
+    "endpoint": "/uapi/v1/generate_image",
+    "body": "multipart",
+    "provider_model_id": "muse",
+    "provider_params": {}
+  }
+]
+

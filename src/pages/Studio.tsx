@@ -214,7 +214,7 @@ export const Studio: React.FC = () => {
   const currentModel = models.find((m) => m.key === selectedModelKey) || models[0];
   const isModelLocked = models.length === 1;
   const costCredits = currentModel?.credits ?? 4;
-  const remainingQuota = quota?.remaining ?? 17;
+  const remainingQuota = quota?.remaining ?? 35;
 
   // Resolve effective task & history for display (supports ?demo_state= for visual verification)
   const effectiveTask = React.useMemo(() => {
@@ -811,7 +811,7 @@ export const Studio: React.FC = () => {
           <div className="px-3 py-2.5 rounded-[8px] bg-[#070d10] border border-white/10 flex items-center justify-between">
             <span className="text-xs font-medium text-[#e2e8f0]">
               Biaya: <strong className="text-[#ffd28a]">{costCredits} KR</strong> · Sisa kuota hari ini:{' '}
-              <strong className="text-white">{remainingQuota}/{quota?.limit ?? 17}</strong>
+              <strong className="text-white">{remainingQuota}/{quota?.limit ?? 35}</strong>
             </span>
             {isPromptTooShort && (
               <span className="text-xs text-[#ffd28a]">Min. 5 karakter</span>

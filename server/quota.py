@@ -11,7 +11,7 @@ logger = logging.getLogger("snapgen.quota")
 async def get_user_quota_status(user_id: str, division_id: str) -> Dict[str, Any]:
     """Calculate rolling window quota for user."""
     window_days = get_setting("USER_QUOTA_WINDOW_DAYS", 1)
-    limit = get_setting("USER_QUOTA_OUTPUTS", 17)
+    limit = get_setting("USER_QUOTA_OUTPUTS", 35)
     retention_days = get_setting("HISTORY_RETENTION_DAYS", 3)
 
     if AsyncSessionLocal:

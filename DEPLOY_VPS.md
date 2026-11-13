@@ -15,9 +15,17 @@ Skrip `deploy.sh` akan otomatis:
 2. Membuat direktori penyimpanan `data/videos`, `data/images`, `data/uploads`, dan `logs`.
 3. Membuat file `.env` otomatis dengan `AUTH_SECRET` dan `ACCOUNT_KEY_SECRET` acak yang aman jika `.env` belum ada.
 4. Menjalankan `docker compose up -d --build` untuk menyalakan:
-   - `kurmaflow_postgres` (PostgreSQL 16 + otomatis menjalankan migrasi tabel `batches`, `tasks`, dan `credit_logs`)
    - `kurmaflow_backend` (FastAPI + Worker Antrean Per Kantor + FFmpeg)
-   - `kurmaflow_web` (React Production Build + Nginx Reverse Proxy di port `3001`)
+   - `kurmaflow_web` (React Production Build + Nginx Reverse Proxy di `127.0.0.1:3001`)
+
+> **Database:** app ini TIDAK membawa container PostgreSQL sendiri. Dipakai PostgreSQL bersama di VPS
+> (container `postgres`, network Docker `internal`), database + user `snapgen`. Tabel dibuat otomatis
+> oleh backend saat start (`init_db` + `migrations`). Sebelum deploy pertama, pastikan:
+> - network `internal` sudah ada (`docker network create internal` bila belum),
+> - database/user `snapgen` sudah dibuat di postgres bersama,
+> - `POSTGRES_URL` di `.env` mengarah ke `postgresql+asyncpg://snapgen:<password>@postgres:5432/snapgen`.
+>
+> Akses publik lewat Cloudflare Tunnel: `https://kurmaflow.kurmagroup.com` -> service HTTP `kurmaflow_web:80`.
 
 ---
 
@@ -25,7 +33,7 @@ Skrip `deploy.sh` akan otomatis:
 
 1. Buka browser dan akses:
    ```text
-   http://<IP-VPS-ANDA>:3001
+   https://kurmaflow.kurmagroup.com
    ```
 2. Saat pertama kali dibuka (database masih kosong), halaman **Setup Super Admin** (`/register` bootstrap) akan terbuka otomatis:
    - Buat akun Super Admin (mis. username `itkurma`, password `kurmagroup`).

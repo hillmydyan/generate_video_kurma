@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: snapgen_postgres
+    container_name: kurmaflow_postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -9,18 +9,24 @@ services:
       POSTGRES_DB: snapgen
       TZ: Asia/Jakarta
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d snapgen"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: snapgen_backend
+    container_name: kurmaflow_backend
     restart: unless-stopped
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       POSTGRES_URL: postgresql+asyncpg://postgres:postgrespassword@postgres:5432/snapgen
       SNAPGEN_API_BASE: https://api.snapgen.ai
@@ -39,14 +45,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.web
-    container_name: snapgen_web
+    container_name: kurmaflow_web
     restart: unless-stopped
     depends_on:
       - backend
     environment:
       TZ: Asia/Jakarta
     ports:
-      - "3001:80"
+      - "${WEB_PORT:-3001}:80"
 
 volumes:
   pgdata:

@@ -12,4 +12,5 @@ pytz>=2024.2
 python-dotenv>=1.0.1
 cryptography>=43.0.1
 aiofiles>=24.1.0
+aiosqlite>=0.20.0
 

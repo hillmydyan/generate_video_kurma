@@ -33,11 +33,16 @@ async def get_models(current_user: dict = Depends(get_current_user)):
                 default_image = div.default_image_model
 
     models = app_state.get_models_for_division(allowed_models, is_super_admin=is_super)
+    div_video_models = [
+        m for m in app_state.get_models_for_division(allowed_models, is_super_admin=False)
+        if m.get("type") == "video"
+    ]
 
     return {
         "models": models,
         "default_video_model": default_video,
         "default_image_model": default_image,
         "division_id": division_id,
+        "video_model_locked": len(div_video_models) == 1,
     }
 

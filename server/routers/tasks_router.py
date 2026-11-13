@@ -35,34 +35,17 @@ class GenerateRequest(BaseModel):
     image_mode: str = "none"  # shared, per_entry, none
     clear_pending: bool = False
 
+from server.media_security import validate_and_save_uploaded_image
+
 @router.post("/upload")
 async def upload_asset(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user)
 ):
-    """Upload reference image (PNG/JPG/WEBP, max 10MB) - PRD §7.4, §14."""
-    allowed_types = ["image/png", "image/jpeg", "image/webp"]
-    if file.content_type not in allowed_types:
-        raise HTTPException(
-            status_code=400,
-            detail="Format file tidak didukung. Gunakan PNG, JPG, atau WEBP."
-        )
-
+    """Upload reference image (PNG/JPG/WEBP, max 10MB, magic-byte verified) - PRD §7.4, §14."""
     content = await file.read()
-    max_bytes = get_setting("UPLOAD_MAX_MB", 10) * 1024 * 1024
-    if len(content) > max_bytes:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Ukuran file melebihi batas {get_setting('UPLOAD_MAX_MB', 10)} MB."
-        )
-
-    ext = Path(file.filename or "image.png").suffix or ".png"
-    safe_name = f"{uuid.uuid4().hex}{ext}"
-    dest = DATA_DIR / "uploads" / safe_name
-    with open(dest, "wb") as f:
-        f.write(content)
-
-    return {"path": f"uploads/{safe_name}", "filename": file.filename}
+    rel_path, _ = validate_and_save_uploaded_image(content)
+    return {"path": rel_path, "filename": file.filename}
 
 @router.get("/users/{user_id}/quota")
 async def get_quota(user_id: str, current_user: dict = Depends(get_current_user)):
@@ -366,6 +349,6 @@ async def download_selected_zip(
     return StreamingResponse(
         zip_buffer,
         media_type="application/zip",
-        headers={"Content-Disposition": f"attachment; filename=snapgen_{user_id}_assets.zip"}
+        headers={"Content-Disposition": f"attachment; filename=kurmaflow_{user_id}_assets.zip"}
     )
 

@@ -32,6 +32,14 @@ export const Admin: React.FC = () => {
   const [newRole, setNewRole] = useState('DIVISION_MEMBER');
   const [newUserDiv, setNewUserDiv] = useState('kantor_a');
 
+  // Edit user modal state
+  const [editingUser, setEditingUser] = useState<any | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editRole, setEditRole] = useState('DIVISION_MEMBER');
+  const [editDiv, setEditDiv] = useState('kantor_a');
+  const [editPassword, setEditPassword] = useState('');
+  const [savingUser, setSavingUser] = useState(false);
+
   const fetchAdminData = async () => {
     try {
       const ov = await api.admin.getOverview();
@@ -171,6 +179,61 @@ export const Admin: React.FC = () => {
     }
   };
 
+  const openEditUser = (u: any) => {
+    setEditingUser(u);
+    setEditName(u.name || '');
+    setEditRole(u.role || 'DIVISION_MEMBER');
+    setEditDiv(u.division_id || 'kantor_a');
+    setEditPassword('');
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setSavingUser(true);
+    try {
+      const payload: Record<string, any> = {
+        name: editName.trim(),
+        role: editRole,
+        division_id: editDiv,
+      };
+      if (editPassword.trim()) {
+        payload.password = editPassword.trim();
+      }
+      await api.admin.updateUser(editingUser.id, payload);
+      const updatedId = editingUser.id;
+      setEditingUser(null);
+      setEditPassword('');
+      fetchAdminData();
+      success('User Diperbarui', `Data akun @${updatedId} berhasil disimpan.`);
+    } catch (err: any) {
+      error('Gagal Memperbarui User', err.message);
+    } finally {
+      setSavingUser(false);
+    }
+  };
+
+  const handleDeleteUser = async (u: any) => {
+    const ok = await confirm({
+      title: 'Hapus Akun Anggota?',
+      message: `Akun @${u.id} (${u.name}) akan dihapus dari sistem secara permanen.`,
+      confirmLabel: 'Hapus User',
+      cancelLabel: 'Batal',
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await api.admin.deleteUser(u.id);
+      if (editingUser?.id === u.id) {
+        setEditingUser(null);
+      }
+      fetchAdminData();
+      success('User Dihapus', `Akun @${u.id} berhasil dihapus dari sistem.`);
+    } catch (err: any) {
+      error('Gagal Menghapus User', err.message);
+    }
+  };
+
   const handleRotateResetCode = async () => {
     try {
       const res = await api.admin.rotateResetCode();
@@ -188,7 +251,7 @@ export const Admin: React.FC = () => {
         <div>
           <span className="kicker flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-[#9cb080]" />
-            <span>KONSOL SISTEM & DIVISI / ID: snapgen-prod</span>
+            <span>KONSOL SISTEM & DIVISI / ID: kurmaflow-prod</span>
           </span>
           <h1 className="text-2xl font-bold font-['Plus_Jakarta_Sans'] text-white mt-1">
             Admin Panel
@@ -503,6 +566,7 @@ export const Admin: React.FC = () => {
                     <th className="py-2.5 px-3">NAMA</th>
                     <th className="py-2.5 px-3">ROLE</th>
                     <th className="py-2.5 px-3">DIVISI</th>
+                    <th className="py-2.5 px-3 text-right">AKSI</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.04]">
@@ -512,12 +576,139 @@ export const Admin: React.FC = () => {
                       <td className="py-3 px-3 font-medium text-white">{u.name}</td>
                       <td className="py-3 px-3 font-mono">{u.role}</td>
                       <td className="py-3 px-3 font-mono uppercase">{u.division_id}</td>
+                      <td className="py-3 px-3 text-right">
+                        <div className="inline-flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => openEditUser(u)}
+                            className="btn btn-ghost py-1 px-2.5 text-[11px] rounded-lg flex items-center gap-1 text-[#9cb080] hover:text-white border border-white/5 hover:border-white/15"
+                            title={`Edit @${u.id}`}
+                          >
+                            <Icon name="edit" size={14} />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(u)}
+                            className="btn btn-ghost py-1 px-2.5 text-[11px] rounded-lg flex items-center gap-1 text-[#fb7185] hover:text-red-400 border border-white/5 hover:border-red-500/30"
+                            title={`Hapus @${u.id}`}
+                          >
+                            <Icon name="delete" size={14} />
+                            <span>Hapus</span>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           </div>
+
+          {/* Modal / Panel Edit User */}
+          {editingUser && (
+            <div
+              className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4"
+              onClick={() => setEditingUser(null)}
+            >
+              <form
+                onSubmit={handleUpdateUser}
+                onClick={(e) => e.stopPropagation()}
+                className="glass-panel w-full max-w-md rounded-2xl p-6 border border-white/15 shadow-2xl space-y-4"
+              >
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <div>
+                    <span className="kicker text-[10px]">EDIT ANGGOTA</span>
+                    <h4 className="text-sm font-bold text-white font-mono mt-0.5">@{editingUser.id}</h4>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEditingUser(null)}
+                    className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-zinc-400 hover:text-white"
+                  >
+                    <Icon name="close" size={16} />
+                  </button>
+                </div>
+
+                <div>
+                  <label className="kicker block mb-1.5">NAMA LENGKAP</label>
+                  <input
+                    type="text"
+                    required
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Nama Lengkap"
+                    className="w-full glass-input text-xs"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="kicker block mb-1.5">ROLE</label>
+                    <select
+                      value={editRole}
+                      onChange={(e) => setEditRole(e.target.value)}
+                      className="w-full glass-input text-xs font-mono"
+                    >
+                      <option value="DIVISION_MEMBER">DIVISION_MEMBER</option>
+                      <option value="DIVISION_ADMIN">DIVISION_ADMIN</option>
+                      <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="kicker block mb-1.5">DIVISI</label>
+                    <select
+                      value={editDiv}
+                      onChange={(e) => setEditDiv(e.target.value)}
+                      className="w-full glass-input text-xs font-mono"
+                    >
+                      {divisions.length > 0 ? (
+                        divisions.map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.name} ({d.id})
+                          </option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="kantor_a">Kantor A</option>
+                          <option value="kantor_b">Kantor B</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="kicker block mb-1.5">PASSWORD BARU (OPSIONAL)</label>
+                  <input
+                    type="password"
+                    value={editPassword}
+                    onChange={(e) => setEditPassword(e.target.value)}
+                    placeholder="Kosongkan jika tidak ingin mengganti password"
+                    className="w-full glass-input text-xs"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setEditingUser(null)}
+                    className="btn btn-ghost py-2 px-4 text-xs rounded-lg"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingUser}
+                    className="btn btn-primary py-2 px-5 text-xs font-bold rounded-lg flex items-center gap-1.5"
+                  >
+                    {savingUser && <Icon name="sync" size={14} className="animate-fs-spin" />}
+                    <span>Simpan Perubahan</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
 
           {/* Form Tambah User */}
           <form onSubmit={handleCreateUser} className="glass-panel p-6 rounded-2xl space-y-4">

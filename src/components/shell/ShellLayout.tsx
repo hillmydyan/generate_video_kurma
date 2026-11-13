@@ -117,10 +117,7 @@ export const ShellLayout: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <span className="font-extrabold text-lg tracking-tight font-['Plus_Jakarta_Sans'] text-white">
-              SnapGen
-            </span>
-            <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-white/10 text-[#9cb080] font-mono">
-              FLOW
+              KurmaFlow
             </span>
           </div>
         </div>
@@ -185,7 +182,7 @@ export const ShellLayout: React.FC = () => {
           <button
             type="button"
             onClick={() => fetchCredits(1, true)}
-            title="Klik untuk sinkronisasi saldo kredit terbaru dari SnapGen"
+            title="Klik untuk sinkronisasi saldo kredit terbaru"
             className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#111d22] hover:bg-[#1a2a31] border border-[#f59e0b]/30 text-xs font-mono font-semibold text-[#ffd28a] transition cursor-pointer"
           >
             <Icon
@@ -333,7 +330,7 @@ export const ShellLayout: React.FC = () => {
       {/* Footer */}
       <footer className="h-12 border-t border-white/[0.06] px-8 flex items-center justify-between text-xs text-[#8f9286] font-mono bg-[#0b0f17]/50">
         <div>
-          SnapGen FLOW Studio Engine / v1.6.0
+          KurmaFlow Studio Engine / v1.6.0
         </div>
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />

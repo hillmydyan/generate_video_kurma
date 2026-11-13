@@ -15,10 +15,21 @@ class SSEBroker:
         self._user_queues: Dict[str, Set[asyncio.Queue]] = {}
         # Admin broadcast queues (SUPER_ADMIN and DIVISION_ADMIN)
         self._admin_queues: Set[asyncio.Queue] = set()
-        self._lock = asyncio.Lock()
+        self._lock: Any = None
+        self._loop: Any = None
+
+    def _ensure_loop(self) -> asyncio.Lock:
+        loop = asyncio.get_running_loop()
+        if self._lock is None or self._loop is not loop:
+            self._lock = asyncio.Lock()
+            self._user_mailboxes = {}
+            self._user_queues = {}
+            self._admin_queues = set()
+            self._loop = loop
+        return self._lock
 
     async def get_mailbox(self, user_id: str) -> asyncio.Queue:
-        async with self._lock:
+        async with self._ensure_loop():
             if user_id not in self._user_mailboxes:
                 self._user_mailboxes[user_id] = asyncio.Queue(maxsize=100)
             return self._user_mailboxes[user_id]
@@ -50,7 +61,7 @@ class SSEBroker:
     async def broadcast_all(self, event_type: str, data: Any):
         """Broadcast event to every user mailbox."""
         payload = f"event: {event_type}\ndata: {json.dumps(data)}\n\n"
-        async with self._lock:
+        async with self._ensure_loop():
             queues = list(self._user_mailboxes.values())
         for q in queues:
             if q.full():

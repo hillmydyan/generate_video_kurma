@@ -78,10 +78,7 @@ export const Login: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <span className="font-extrabold text-2xl tracking-tight font-['Plus_Jakarta_Sans'] text-white">
-            SnapGen
-          </span>
-          <span className="text-xs uppercase font-bold tracking-widest px-2.5 py-1 rounded bg-white/10 text-[#9cb080] font-mono">
-            FLOW
+            KurmaFlow
           </span>
         </div>
       </div>
@@ -213,7 +210,7 @@ export const Login: React.FC = () => {
 
       {/* Footer Version info */}
       <div className="mt-8 text-xs text-[#4a5a62] font-mono">
-        SnapGen FLOW Studio Engine / v1.6.0
+        KurmaFlow Studio Engine / v1.6.0
       </div>
     </div>
   );

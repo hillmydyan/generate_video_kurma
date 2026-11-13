@@ -49,11 +49,42 @@ class ProviderAccount(Base):
     status = Column(String(32), nullable=False, default="active")  # active, credits_low, depleted, rate_limited, expired, disabled
     breaker_until = Column(DateTime, nullable=True)
     credits_cached = Column(Integer, nullable=False, default=0)
+    credits_reserved = Column(Integer, nullable=False, default=0)
     credits_checked_at = Column(DateTime, nullable=True)
     outputs_today = Column(Integer, nullable=False, default=0)
     outputs_total = Column(Integer, nullable=False, default=0)
     last_used_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, nullable=False, default=now)
+
+class Batch(Base):
+    __tablename__ = "batches"
+
+    id = Column(String(64), primary_key=True)
+    user_id = Column(String(64), nullable=False, index=True)
+    kantor_id = Column(String(64), nullable=False, index=True)
+    nama = Column(String(128), nullable=False)
+    foto_path = Column(String(256), nullable=False)
+    model = Column(String(64), nullable=False)
+    rasio = Column(String(32), nullable=False, default="9:16")
+    durasi = Column(Integer, nullable=False, default=8)
+    status = Column(String(32), nullable=False, default="berjalan", index=True)  # berjalan, selesai, sebagian_gagal, dibatalkan
+    total_kr = Column(Integer, nullable=False, default=0)
+    idempotency_key = Column(String(128), nullable=True, index=True)
+    created_at = Column(DateTime, nullable=False, default=now, index=True)
+    finished_at = Column(DateTime, nullable=True)
+
+class CreditLog(Base):
+    __tablename__ = "credit_logs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String(64), nullable=False, index=True)
+    kantor_id = Column(String(64), nullable=False, index=True)
+    batch_id = Column(String(64), nullable=True, index=True)
+    task_id = Column(String(64), nullable=True, index=True)
+    delta_kr = Column(Integer, nullable=False)
+    balance_after = Column(Integer, nullable=False)
+    alasan = Column(Text, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=now, index=True)
 
 class Task(Base):
     __tablename__ = "tasks"
@@ -62,7 +93,8 @@ class Task(Base):
     user_id = Column(String(64), nullable=False, index=True)
     division_id = Column(String(64), nullable=False, index=True)
     batch_id = Column(String(64), nullable=True, index=True)
-    status = Column(String(32), nullable=False, default="queued", index=True)  # queued, generating, downloading, completed, failed
+    urutan = Column(Integer, nullable=False, default=1)
+    status = Column(String(32), nullable=False, default="queued", index=True)  # queued, generating, downloading, completed, failed, cancelled
     prompt = Column(Text, nullable=False)
     prompt_index = Column(Integer, default=0)
     total_prompts = Column(Integer, default=1)
@@ -74,18 +106,24 @@ class Task(Base):
     media_type = Column(String(32), nullable=False, default="video")  # video, image
     options_json = Column(Text, nullable=False, default="{}")
     credit_cost = Column(Integer, nullable=False, default=0)
+    kr_biaya = Column(Integer, nullable=False, default=0)
+    kr_reserved = Column(Integer, nullable=False, default=0)
     credit_estimated = Column(Integer, nullable=False, default=0)
     credit_used = Column(Integer, nullable=False, default=0)
     provider_job_id = Column(String(128), nullable=True, index=True)
     provider_pct = Column(Integer, nullable=False, default=0)
+    progress = Column(Integer, nullable=False, default=0)
     provider_expired_at = Column(DateTime, nullable=True)
     account_id = Column(String(64), nullable=True)
     est_seconds = Column(Integer, nullable=False, default=180)
     started_at = Column(DateTime, nullable=True)
     finished_at = Column(DateTime, nullable=True)
     result_url = Column(String(512), nullable=True)
+    video_path = Column(String(512), nullable=True)
     error = Column(Text, nullable=True)
+    error_message = Column(Text, nullable=True)
     task_retries = Column(Integer, nullable=False, default=0)
+    percobaan = Column(Integer, nullable=False, default=0)
     requeued_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, nullable=False, default=now, index=True)
     updated_at = Column(DateTime, nullable=False, default=now)
@@ -147,6 +185,11 @@ AsyncSessionLocal = _AsyncSessionLocalProxy()
 
 async def init_db():
     global engine, _session_maker
+    if engine is not None:
+        try:
+            await engine.dispose()
+        except Exception:
+            pass
     target_url = POSTGRES_URL
     use_postgres = True
 
@@ -163,6 +206,8 @@ async def init_db():
             engine = create_async_engine(target_url, echo=False)
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
+            from migrations import run_all_migrations
+            await run_all_migrations(engine)
             logger.info(f"Connected to PostgreSQL database at {target_url}")
         except Exception as e:
             logger.warning(f"PostgreSQL connection failed ({e}). Falling back to local SQLite.")
@@ -174,6 +219,8 @@ async def init_db():
         engine = create_async_engine(fallback_url, echo=False)
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+        from migrations import run_all_migrations
+        await run_all_migrations(engine)
         logger.info(f"Initialized local SQLite database at {fallback_url}")
 
     _session_maker = async_sessionmaker(

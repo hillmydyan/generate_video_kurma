@@ -18,19 +18,19 @@ export default defineConfig({
     port: 3001,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8005',
+        target: 'http://127.0.0.1:8006',
         changeOrigin: true,
       },
       '/videos': {
-        target: 'http://127.0.0.1:8005',
+        target: 'http://127.0.0.1:8006',
         changeOrigin: true,
       },
       '/images': {
-        target: 'http://127.0.0.1:8005',
+        target: 'http://127.0.0.1:8006',
         changeOrigin: true,
       },
       '/uploads': {
-        target: 'http://127.0.0.1:8005',
+        target: 'http://127.0.0.1:8006',
         changeOrigin: true,
       },
     },

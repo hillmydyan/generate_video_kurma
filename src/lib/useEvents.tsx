@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
+import { API_BASE } from "@/lib/api";
 
 export type ConnectionState = "online" | "connecting" | "offline";
 
@@ -33,7 +34,7 @@ export const EventsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     setConnState("connecting");
-    const es = new EventSource(`/api/events?token=${encodeURIComponent(token)}`);
+    const es = new EventSource(`${API_BASE}/api/events?token=${encodeURIComponent(token)}`);
     esRef.current = es;
 
     es.onopen = () => {

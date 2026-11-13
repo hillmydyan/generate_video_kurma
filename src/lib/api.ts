@@ -1,4 +1,9 @@
-const API_BASE = "";
+export const API_BASE =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") &&
+  (window.location.port === "3001" || window.location.port === "3002")
+    ? "http://127.0.0.1:8006"
+    : "";
 
 function getAuthHeader(): Record<string, string> {
   const token = localStorage.getItem("snapgen_token");
@@ -78,7 +83,14 @@ export const api = {
     getMe: () => request<any>("/api/auth/me"),
   },
   models: {
-    list: () => request<{ models: any[]; default_video_model: string; default_image_model: string }>("/api/models"),
+    list: () =>
+      request<{
+        models: any[];
+        default_video_model: string;
+        default_image_model: string;
+        division_id?: string;
+        video_model_locked?: boolean;
+      }>("/api/models"),
   },
   tasks: {
     list: (params: Record<string, any>) => {
@@ -94,7 +106,7 @@ export const api = {
     upload: async (file: File) => {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/upload", {
+      const res = await fetch(`${API_BASE}/api/upload`, {
         method: "POST",
         headers: getAuthHeader(),
         body: fd,
@@ -109,7 +121,7 @@ export const api = {
     getStats: (userId: string) =>
       request<any>(`/api/users/${userId}/stats`),
     downloadZip: async (userId: string, taskIds: string[]) => {
-      const res = await fetch(`/api/users/${userId}/tasks/zip`, {
+      const res = await fetch(`${API_BASE}/api/users/${userId}/tasks/zip`, {
         method: "POST",
         headers: {
           ...getAuthHeader(),
@@ -118,6 +130,57 @@ export const api = {
         body: JSON.stringify({ task_ids: taskIds }),
       });
       if (!res.ok) throw new Error("Gagal mengunduh ZIP");
+      return res.blob();
+    },
+  },
+  batches: {
+    create: async (formData: FormData) => {
+      const res = await fetch(`${API_BASE}/api/batches`, {
+        method: "POST",
+        headers: getAuthHeader(),
+        body: formData,
+      });
+      if (!res.ok) {
+        let errMessage = `HTTP ${res.status}`;
+        try {
+          const data = await res.json();
+          errMessage = data.detail || errMessage;
+        } catch {}
+        throw new Error(errMessage);
+      }
+      return res.json();
+    },
+    getActive: () => request<{ batch: any | null; batches: any[] }>("/api/batches/aktif"),
+    list: (page: number = 1, limit: number = 10) =>
+      request<{ batches: any[]; total: number; page: number; limit: number; total_pages: number }>(
+        `/api/batches?page=${page}&limit=${limit}`
+      ),
+    getDetail: (batchId: string) => request<any>(`/api/batches/${encodeURIComponent(batchId)}`),
+    cancelBatch: (batchId: string) =>
+      request<any>(`/api/batches/${encodeURIComponent(batchId)}/cancel`, {
+        method: "POST",
+      }),
+    retryTask: (taskId: string) =>
+      request<any>(`/api/batch-tasks/${encodeURIComponent(taskId)}/retry`, {
+        method: "POST",
+      }),
+    cancelTask: (taskId: string) =>
+      request<any>(`/api/batch-tasks/${encodeURIComponent(taskId)}/cancel`, {
+        method: "POST",
+      }),
+    downloadZip: async (batchId: string) => {
+      const res = await fetch(`${API_BASE}/api/batches/${encodeURIComponent(batchId)}/zip`, {
+        method: "GET",
+        headers: getAuthHeader(),
+      });
+      if (!res.ok) {
+        let errMessage = "Gagal mengunduh ZIP batch";
+        try {
+          const data = await res.json();
+          errMessage = data.detail || errMessage;
+        } catch {}
+        throw new Error(errMessage);
+      }
       return res.blob();
     },
   },
@@ -168,6 +231,16 @@ export const api = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
+      }),
+    updateUser: (id: string, body: any) =>
+      request<any>(`/api/admin/users/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+    deleteUser: (id: string) =>
+      request<any>(`/api/admin/users/${encodeURIComponent(id)}`, {
+        method: "DELETE",
       }),
     getResetCode: () => request<any>("/api/admin/reset-code"),
     rotateResetCode: () =>

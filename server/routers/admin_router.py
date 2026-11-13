@@ -404,3 +404,74 @@ async def create_user(req: UserCreateRequest, admin: dict = Depends(require_admi
 
     return {"success": True, "user_id": uid}
 
+class UserUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    password: Optional[str] = None
+    role: Optional[str] = None
+    division_id: Optional[str] = None
+    is_active: Optional[bool] = None
+
+@router.patch("/users/{user_id}")
+async def update_user(
+    user_id: str,
+    req: UserUpdateRequest,
+    admin: dict = Depends(require_admin)
+):
+    uid = user_id.strip().lower()
+    async with AsyncSessionLocal() as session:
+        u = await session.get(User, uid)
+        if not u:
+            raise HTTPException(status_code=404, detail="User tidak ditemukan.")
+
+        if admin["role"] == "DIVISION_ADMIN":
+            if u.division_id != admin["division_id"] or u.role == "SUPER_ADMIN":
+                raise HTTPException(status_code=403, detail="Tidak memiliki izin mengubah user ini.")
+            if req.role == "SUPER_ADMIN":
+                raise HTTPException(status_code=403, detail="Tidak memiliki izin menetapkan role SUPER_ADMIN.")
+            if req.division_id and req.division_id != admin["division_id"]:
+                raise HTTPException(status_code=403, detail="Tidak dapat memindahkan user ke divisi lain.")
+
+        if req.name is not None and req.name.strip():
+            u.name = req.name.strip()
+        if req.role is not None:
+            u.role = req.role
+        if req.division_id is not None:
+            u.division_id = req.division_id
+        if req.is_active is not None:
+            u.is_active = req.is_active
+        if req.password is not None and req.password.strip():
+            if len(req.password.strip()) < 6:
+                raise HTTPException(status_code=400, detail="Password minimal 6 karakter.")
+            p_hash, salt = hash_password(req.password.strip())
+            u.password_hash = p_hash
+            u.salt = salt
+            u.token_version = (u.token_version or 1) + 1
+
+        await session.commit()
+
+    return {"success": True, "user_id": uid}
+
+@router.delete("/users/{user_id}")
+async def delete_user(
+    user_id: str,
+    admin: dict = Depends(require_admin)
+):
+    uid = user_id.strip().lower()
+    if uid == admin["id"]:
+        raise HTTPException(status_code=400, detail="Tidak dapat menghapus akun Anda sendiri yang sedang aktif.")
+
+    async with AsyncSessionLocal() as session:
+        u = await session.get(User, uid)
+        if not u:
+            raise HTTPException(status_code=404, detail="User tidak ditemukan.")
+
+        if admin["role"] == "DIVISION_ADMIN":
+            if u.division_id != admin["division_id"] or u.role == "SUPER_ADMIN":
+                raise HTTPException(status_code=403, detail="Tidak memiliki izin menghapus user ini.")
+
+        await session.delete(u)
+        await session.commit()
+
+    return {"success": True, "user_id": uid}
+
+

@@ -112,7 +112,7 @@ export const Gallery: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `snapgen_assets_${selectedIds.length}.zip`;
+      a.download = `kurmaflow_assets_${selectedIds.length}.zip`;
       a.click();
       success('Unduhan ZIP Dimulai', `${selectedIds.length} aset berhasil dikemas.`);
     } catch (err: any) {

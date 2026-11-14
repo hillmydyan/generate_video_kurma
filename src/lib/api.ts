@@ -247,4 +247,30 @@ export const api = {
     rotateResetCode: () =>
       request<any>("/api/admin/reset-code/rotate", { method: "POST" }),
   },
+  monitoring: {
+    ringkasan: (params: Record<string, string>) =>
+      request<any>(`/api/admin/monitoring/ringkasan?${new URLSearchParams(params)}`),
+    users: (params: Record<string, string>) =>
+      request<any>(`/api/admin/monitoring/users?${new URLSearchParams(params)}`),
+    userDetail: (userId: string, params: Record<string, string>) =>
+      request<any>(
+        `/api/admin/monitoring/users/${encodeURIComponent(userId)}?${new URLSearchParams(params)}`
+      ),
+    generate: (params: Record<string, string>) =>
+      request<any>(`/api/admin/monitoring/generate?${new URLSearchParams(params)}`),
+    usersCsv: async (params: Record<string, string>) => {
+      const res = await fetch(`${API_BASE}/api/admin/monitoring/users.csv?${new URLSearchParams(params)}`, {
+        headers: getAuthHeader(),
+      });
+      if (!res.ok) {
+        let errMessage = `HTTP ${res.status}`;
+        try {
+          const data = await res.json();
+          errMessage = data.detail || errMessage;
+        } catch {}
+        throw new Error(errMessage);
+      }
+      return res.blob();
+    },
+  },
 };

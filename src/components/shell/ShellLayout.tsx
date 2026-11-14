@@ -151,11 +151,22 @@ export const ShellLayout: React.FC = () => {
           {isAdmin && (
             <NavLink
               to="/admin"
+              end
               className={({ isActive }) =>
                 `nav-pill ${isActive ? 'nav-pill-active' : ''}`
               }
             >
               Admin
+            </NavLink>
+          )}
+          {isAdmin && (
+            <NavLink
+              to="/admin/monitoring"
+              className={({ isActive }) =>
+                `nav-pill ${isActive ? 'nav-pill-active' : ''}`
+              }
+            >
+              Monitoring
             </NavLink>
           )}
         </nav>

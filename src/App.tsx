@@ -8,6 +8,7 @@ import { Studio } from '@/pages/Studio';
 import { Gallery } from '@/pages/Gallery';
 import { Pabrik } from '@/pages/Pabrik';
 import { Admin } from '@/pages/Admin';
+import { AdminMonitoring } from '@/pages/AdminMonitoring';
 
 export const App: React.FC = () => {
   return (
@@ -22,6 +23,7 @@ export const App: React.FC = () => {
               <Route path="/pabrik" element={<Pabrik />} />
               <Route path="/gallery" element={<Gallery />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/admin/monitoring" element={<AdminMonitoring />} />
             </Route>
             <Route path="*" element={<Navigate to="/studio" replace />} />
           </Routes>

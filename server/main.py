@@ -16,7 +16,7 @@ from server.auth import verify_token
 from server.sse import sse_broker
 from server.worker import stop_all_workers, recover_unfinished_tasks_on_startup
 from server.routers import (
-    auth_router, models_router, tasks_router, admin_router, batches_router
+    auth_router, models_router, tasks_router, admin_router, batches_router, monitoring_router
 )
 
 logging.basicConfig(
@@ -82,6 +82,7 @@ app.include_router(models_router.router)
 app.include_router(tasks_router.router)
 app.include_router(batches_router.router)
 app.include_router(admin_router.router)
+app.include_router(monitoring_router.router)
 
 
 async def _authenticate_media_request(request: Request, token: Optional[str]) -> dict:

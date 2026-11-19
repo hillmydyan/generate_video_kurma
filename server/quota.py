@@ -8,8 +8,15 @@ from config.clock import now
 
 logger = logging.getLogger("snapgen.quota")
 
+
+def period_start(window_days: int = 1, at: datetime | None = None) -> datetime:
+    """Awal periode kuota: 00:00 WIB hari ini, mundur (window_days - 1) hari."""
+    ref = at or now()
+    midnight = ref.replace(hour=0, minute=0, second=0, microsecond=0)
+    return midnight - timedelta(days=max(1, int(window_days or 1)) - 1)
+
 async def get_user_quota_status(user_id: str, division_id: str) -> Dict[str, Any]:
-    """Calculate rolling window quota for user."""
+    """Kuota user per periode harian (reset 00:00 WIB)."""
     window_days = get_setting("USER_QUOTA_WINDOW_DAYS", 1)
     limit = get_setting("USER_QUOTA_OUTPUTS", 35)
     retention_days = get_setting("HISTORY_RETENTION_DAYS", 3)
@@ -24,7 +31,9 @@ async def get_user_quota_status(user_id: str, division_id: str) -> Dict[str, Any
                 if div.quota_window_days is not None:
                     window_days = div.quota_window_days
 
-            cutoff = now() - timedelta(days=window_days)
+            # Reset harian jam 00:00 WIB (bukan jendela 24 jam bergulir).
+            # window_days > 1: periode = hari ini + (window_days - 1) hari sebelumnya.
+            cutoff = period_start(window_days)
             # Count consumed outputs in window
             stmt = (
                 select(func.count(QuotaUsage.task_id))
@@ -33,16 +42,8 @@ async def get_user_quota_status(user_id: str, division_id: str) -> Dict[str, Any
             result = await session.execute(stmt)
             used = result.scalar() or 0
 
-            # Find next free timestamp (oldest entry in window that will expire)
-            oldest_stmt = (
-                select(QuotaUsage.created_at)
-                .where(and_(QuotaUsage.user_id == user_id, QuotaUsage.created_at >= cutoff))
-                .order_by(QuotaUsage.created_at.asc())
-                .limit(1)
-            )
-            oldest_res = await session.execute(oldest_stmt)
-            oldest_dt = oldest_res.scalar()
-            next_free_at = (oldest_dt + timedelta(days=window_days)).isoformat() if oldest_dt else None
+            # Kuota kembali penuh di awal periode berikutnya (00:00 WIB).
+            next_free_at = (cutoff + timedelta(days=max(1, window_days))).isoformat() if used else None
     else:
         used = 0
         next_free_at = None
